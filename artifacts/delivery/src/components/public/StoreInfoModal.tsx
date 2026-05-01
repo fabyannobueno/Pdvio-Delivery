@@ -2,10 +2,18 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Phone, Clock, Truck, ShoppingBag, X, DollarSign, Instagram, Facebook, Youtube, Linkedin, Send, Globe, Twitter } from "lucide-react";
+import { MapPin, Phone, Clock, Truck, ShoppingBag, X, DollarSign, Instagram, Facebook, Youtube, Linkedin, Send, Globe, Twitter, CreditCard, Smartphone, Receipt, Wallet } from "lucide-react";
 import type { Company } from "@/types";
 
 const DAY_NAMES = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
+
+const PAYMENT_METHODS = [
+  { id: "pix", name: "PIX", icon: Smartphone },
+  { id: "credit_card", name: "Cartão de Crédito", icon: CreditCard },
+  { id: "debit_card", name: "Cartão de Débito", icon: CreditCard },
+  { id: "cash", name: "Dinheiro", icon: DollarSign },
+  { id: "ticket", name: "Vale Refeição", icon: Receipt },
+];
 
 interface StoreInfoModalProps {
   isOpen: boolean;
@@ -188,6 +196,28 @@ export const StoreInfoModal = ({ isOpen, onClose, company }: StoreInfoModalProps
               </div>
             </CardContent>
           </Card>
+
+          {company.payment_settings && Object.values(company.payment_settings).some(Boolean) && (
+            <Card>
+              <CardContent className="p-4">
+                <h3 className="font-medium mb-4 flex items-center gap-2">
+                  <Wallet className="w-5 h-5" />
+                  Formas de Pagamento
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {PAYMENT_METHODS.filter(pm => company.payment_settings![pm.id]).map(pm => {
+                    const Icon = pm.icon;
+                    return (
+                      <div key={pm.id} className="flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm">
+                        <Icon className="w-4 h-4 flex-shrink-0" />
+                        <span>{pm.name}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+              </CardContent>
+            </Card>
+          )}
 
           {(company.delivery_instagram || company.delivery_facebook || company.delivery_tiktok || company.delivery_twitter || company.delivery_youtube || company.delivery_linkedin || company.delivery_telegram || company.delivery_site) && (
             <Card>
