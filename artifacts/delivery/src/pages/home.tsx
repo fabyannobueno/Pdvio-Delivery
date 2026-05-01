@@ -7,7 +7,6 @@ export default function Home() {
           alt="PDVIO"
           className="h-16 mx-auto object-contain"
         />
-        <h1 className="text-3xl font-bold text-foreground">PDVIO Delivery</h1>
         <p className="text-muted-foreground text-lg">
           Acesse o cardápio de uma loja pelo link compartilhado.
         </p>
