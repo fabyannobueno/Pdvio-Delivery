@@ -127,7 +127,7 @@ export const StoreInfoModal = ({ isOpen, onClose, company }: StoreInfoModalProps
                 <div className="space-y-2">
                   {company.delivery_operating_hours.map(h => (
                     <div key={h.day} className="flex justify-between">
-                      <span className="font-medium">{DAY_NAMES[h.day]}</span>
+                      <span className="font-medium">{typeof h.day === "number" ? DAY_NAMES[h.day] : h.day}</span>
                       <span className={h.isOpen ? "text-foreground" : "text-muted-foreground"}>
                         {h.isOpen ? `${h.openTime} — ${h.closeTime}` : "Fechado"}
                       </span>
