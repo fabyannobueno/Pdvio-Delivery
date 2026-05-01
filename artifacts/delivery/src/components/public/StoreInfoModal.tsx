@@ -26,7 +26,7 @@ export const StoreInfoModal = ({ isOpen, onClose, company }: StoreInfoModalProps
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto [&>button:last-child]:hidden">
         <DialogHeader className="text-left">
           <DialogTitle className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
