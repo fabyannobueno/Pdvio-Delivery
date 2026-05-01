@@ -287,6 +287,17 @@ export const StoreInfoModal = ({ isOpen, onClose, company }: StoreInfoModalProps
             </Card>
           )}
         </div>
+
+        <div className="pt-2 border-t text-center">
+          <a
+            href="https://www.pdvio.com.br/"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            Powered by <span className="font-semibold">PDVIO</span>
+          </a>
+        </div>
       </DialogContent>
     </Dialog>
   );
