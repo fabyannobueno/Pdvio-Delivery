@@ -223,7 +223,7 @@ export const PublicStorePage = () => {
           </div>
         )}
 
-        <div className="max-w-6xl mx-auto px-4 py-6">
+        <div className="px-4 md:px-8 py-6">
           {/* Header when no cover */}
           {!company.delivery_cover_url && (
             <div className="flex items-center space-x-4 mb-6">
