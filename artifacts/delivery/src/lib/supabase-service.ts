@@ -2,14 +2,32 @@ import { supabase } from "./supabase";
 import type { Company, Product, CartItem } from "../types";
 
 export async function getCompanyBySlug(slug: string): Promise<Company | null> {
+  // Try exact match first
   const { data, error } = await supabase
     .from("companies")
     .select("*")
-    .eq("delivery_slug", slug)
-    .eq("delivery_enabled", true)
-    .single();
+    .ilike("delivery_slug", slug)
+    .maybeSingle();
 
-  if (error || !data) return null;
+  if (error) {
+    console.error("getCompanyBySlug error:", error.message);
+
+    // Try case-insensitive fallback without filter to diagnose RLS issues
+    const { data: probe } = await supabase.from("companies").select("id").limit(1);
+    if (!probe || probe.length === 0) {
+      console.error(
+        "RLS ISSUE: anon key cannot read from 'companies' table. " +
+        "Add a SELECT policy in Supabase: CREATE POLICY \"anon_read\" ON companies FOR SELECT USING (true);"
+      );
+    }
+    return null;
+  }
+
+  if (!data) {
+    console.warn(`No company found with delivery_slug = "${slug}"`);
+    return null;
+  }
+
   return data as Company;
 }
 
