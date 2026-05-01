@@ -54,7 +54,7 @@ export const ShoppingCart = ({ isOpen, onClose, cart, setCart, company, onChecko
 
   return (
     <Sheet open={isOpen} onOpenChange={onClose}>
-      <SheetContent side="right" className="w-full sm:max-w-md h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col p-0">
+      <SheetContent side="right" className="w-full sm:max-w-md h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col p-0 [&>button:first-child]:hidden">
         <SheetHeader className="flex-shrink-0 p-6 pb-0">
           <SheetTitle className="flex items-center justify-between">
             Seu Carrinho
