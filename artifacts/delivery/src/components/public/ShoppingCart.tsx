@@ -58,7 +58,7 @@ export const ShoppingCart = ({ isOpen, onClose, cart, setCart, company, onChecko
         <SheetHeader className="flex-shrink-0 p-6 pb-0">
           <SheetTitle className="flex items-center justify-between">
             Seu Carrinho
-            <Button variant="ghost" size="icon" onClick={onClose}><X className="w-4 h-4" /></Button>
+            <Button variant="ghost" size="icon" onClick={onClose} className="hover:text-primary hover:bg-primary/10"><X className="w-4 h-4" /></Button>
           </SheetTitle>
         </SheetHeader>
 
