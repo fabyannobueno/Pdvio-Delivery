@@ -2,8 +2,20 @@ import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Phone, Clock, Truck, ShoppingBag, X, DollarSign, Instagram, Facebook, Youtube, Linkedin, Send, Globe, Twitter, CreditCard, Smartphone, Receipt, Wallet } from "lucide-react";
+import { MapPin, Phone, Clock, ShoppingBag, X, DollarSign, Instagram, Facebook, Youtube, Linkedin, Send, Globe, Twitter, CreditCard, Smartphone, Receipt, Wallet } from "lucide-react";
 import type { Company } from "@/types";
+
+const MotoIcon = ({ className }: { className?: string }) => (
+  <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <circle cx="5.5" cy="17.5" r="2.5"/>
+    <circle cx="18.5" cy="17.5" r="2.5"/>
+    <path d="M8 17.5h7"/>
+    <path d="M14 17.5V11l-3-4H8l-2 4h1.5"/>
+    <path d="M14 7h3l2 4.5"/>
+    <path d="M11 7h3"/>
+  </svg>
+);
+
 
 const DAY_NAMES = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
 
@@ -152,7 +164,7 @@ export const StoreInfoModal = ({ isOpen, onClose, company }: StoreInfoModalProps
               <div className="space-y-3">
                 {company.delivery_time && (
                   <div className="flex items-center space-x-3">
-                    <Truck className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                    <MotoIcon className="w-5 h-5 text-muted-foreground flex-shrink-0" />
                     <div className="min-w-0">
                       <p className="font-medium">Tempo de Entrega</p>
                       <p className="text-muted-foreground break-words">{company.delivery_time}</p>
@@ -178,7 +190,7 @@ export const StoreInfoModal = ({ isOpen, onClose, company }: StoreInfoModalProps
                   </div>
                 )}
                 <div className="flex items-start space-x-3">
-                  <Truck className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                  <MotoIcon className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
                   <div className="min-w-0">
                     <p className="font-medium">Taxa de Entrega</p>
                     <p className="text-muted-foreground break-words">
