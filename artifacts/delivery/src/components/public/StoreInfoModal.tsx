@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -13,6 +14,9 @@ interface StoreInfoModalProps {
 }
 
 export const StoreInfoModal = ({ isOpen, onClose, company }: StoreInfoModalProps) => {
+  const [closeHovered, setCloseHovered] = useState(false);
+  const primaryColor = company.delivery_primary_color || "#6d28d9";
+
   const formatPhone = (phone: string) => {
     const n = phone.replace(/\D/g, "");
     if (n.length === 11) return n.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
@@ -39,7 +43,13 @@ export const StoreInfoModal = ({ isOpen, onClose, company }: StoreInfoModalProps
               )}
               <h1 className="text-xl font-bold">{company.name}</h1>
             </div>
-            <Button variant="ghost" size="icon" onClick={onClose}><X className="w-4 h-4" /></Button>
+            <button
+              onClick={onClose}
+              className="rounded-md p-2 transition-colors"
+              onMouseEnter={() => setCloseHovered(true)}
+              onMouseLeave={() => setCloseHovered(false)}
+              style={closeHovered ? { color: primaryColor, backgroundColor: `${primaryColor}1a` } : {}}
+            ><X className="w-4 h-4" /></button>
           </DialogTitle>
         </DialogHeader>
 

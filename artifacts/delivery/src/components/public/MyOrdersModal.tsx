@@ -25,6 +25,8 @@ export const MyOrdersModal = ({ isOpen, onClose, company }: MyOrdersModalProps) 
   const [orders, setOrders] = useState<Sale[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [closeHovered, setCloseHovered] = useState(false);
+  const primaryColor = company.delivery_primary_color || "#6d28d9";
 
   const formatPhone = (value: string) => {
     const numbers = value.replace(/\D/g, "");
@@ -91,7 +93,13 @@ export const MyOrdersModal = ({ isOpen, onClose, company }: MyOrdersModalProps) 
               <Package className="w-5 h-5 mr-2" />
               Meus Pedidos
             </div>
-            <Button variant="ghost" size="icon" onClick={handleClose}><X className="w-4 h-4" /></Button>
+            <button
+              onClick={handleClose}
+              className="rounded-md p-2 transition-colors"
+              onMouseEnter={() => setCloseHovered(true)}
+              onMouseLeave={() => setCloseHovered(false)}
+              style={closeHovered ? { color: primaryColor, backgroundColor: `${primaryColor}1a` } : {}}
+            ><X className="w-4 h-4" /></button>
           </DialogTitle>
         </DialogHeader>
 
