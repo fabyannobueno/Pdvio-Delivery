@@ -12,7 +12,7 @@ export default function Home() {
           Acesse o cardápio de uma loja pelo link compartilhado.
         </p>
         <p className="text-sm text-muted-foreground">
-          Exemplo: <code className="bg-muted px-2 py-1 rounded">/delivery/loja/nome-da-loja</code>
+          Exemplo: <code className="bg-muted px-2 py-1 rounded">/nome-da-loja</code>
         </p>
       </div>
     </div>

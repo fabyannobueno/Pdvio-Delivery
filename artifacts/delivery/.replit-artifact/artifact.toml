@@ -1,5 +1,5 @@
 kind = "web"
-previewPath = "/delivery/"
+previewPath = "/"
 title = "PDVIO Delivery"
 version = "1.0.0"
 id = "artifacts/delivery"
@@ -11,7 +11,7 @@ version = "1.0.0"
 
 [[services]]
 name = "web"
-paths = [ "/delivery/" ]
+paths = [ "/" ]
 localPort = 22214
 
 [services.development]
@@ -28,4 +28,4 @@ to = "/index.html"
 
 [services.env]
 PORT = "22214"
-BASE_PATH = "/delivery/"
+BASE_PATH = "/"

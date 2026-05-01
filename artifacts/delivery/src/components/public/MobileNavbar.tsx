@@ -22,7 +22,7 @@ export const MobileNavbar = ({ company, cartItemCount, onShowCart, onShowOrders,
       icon: Home,
       label: "Início",
       action: () => {
-        setLocation(`/loja/${company.delivery_slug}`);
+        setLocation(`/${company.delivery_slug}`);
         setIsOpen(false);
       }
     },

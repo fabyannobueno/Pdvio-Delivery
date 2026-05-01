@@ -12,7 +12,7 @@ function Router() {
   return (
     <Switch>
       <Route path="/" component={Home} />
-      <Route path="/loja/:slug" component={PublicStorePage} />
+      <Route path="/:slug" component={PublicStorePage} />
       <Route component={NotFound} />
     </Switch>
   );
@@ -22,7 +22,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+        <WouterRouter>
           <Router />
         </WouterRouter>
         <Toaster />

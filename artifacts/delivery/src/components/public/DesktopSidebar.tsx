@@ -20,7 +20,7 @@ export const DesktopSidebar = ({ company, cartItemCount, onShowCart, onShowOrder
     {
       icon: Home,
       label: "Início",
-      action: () => setLocation(`/loja/${company.delivery_slug}`)
+      action: () => setLocation(`/${company.delivery_slug}`)
     },
     {
       icon: CartIcon,
