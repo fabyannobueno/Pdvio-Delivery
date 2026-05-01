@@ -58,7 +58,20 @@ export const ShoppingCart = ({ isOpen, onClose, cart, setCart, company, onChecko
         <SheetHeader className="flex-shrink-0 p-6 pb-0">
           <SheetTitle className="flex items-center justify-between">
             Seu Carrinho
-            <Button variant="ghost" size="icon" onClick={onClose} className="hover:text-primary hover:bg-primary/10"><X className="w-4 h-4" /></Button>
+            <button
+              onClick={onClose}
+              className="rounded-md p-2 transition-colors"
+              onMouseEnter={e => {
+                (e.currentTarget as HTMLButtonElement).style.color = "hsl(var(--primary))";
+                (e.currentTarget as HTMLButtonElement).style.backgroundColor = "hsl(var(--primary) / 0.1)";
+              }}
+              onMouseLeave={e => {
+                (e.currentTarget as HTMLButtonElement).style.color = "";
+                (e.currentTarget as HTMLButtonElement).style.backgroundColor = "";
+              }}
+            >
+              <X className="w-4 h-4" />
+            </button>
           </SheetTitle>
         </SheetHeader>
 
