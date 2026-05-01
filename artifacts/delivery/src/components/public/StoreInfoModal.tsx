@@ -1,7 +1,7 @@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Phone, Clock, Truck, ShoppingBag, X, DollarSign, Instagram, Facebook } from "lucide-react";
+import { MapPin, Phone, Clock, Truck, ShoppingBag, X, DollarSign, Instagram, Facebook, Youtube, Linkedin, Send, Globe, Twitter } from "lucide-react";
 import type { Company } from "@/types";
 
 const DAY_NAMES = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
@@ -162,31 +162,67 @@ export const StoreInfoModal = ({ isOpen, onClose, company }: StoreInfoModalProps
             </CardContent>
           </Card>
 
-          {(company.delivery_instagram || company.delivery_facebook) && (
+          {(company.delivery_instagram || company.delivery_facebook || company.delivery_tiktok || company.delivery_twitter || company.delivery_youtube || company.delivery_linkedin || company.delivery_telegram || company.delivery_site) && (
             <Card>
               <CardContent className="p-4">
-                <h3 className="font-medium mb-4">Redes Sociais</h3>
-                <div className="flex gap-3">
+                <h3 className="font-medium mb-4">Redes Sociais e Site</h3>
+                <div className="flex flex-col gap-3">
                   {company.delivery_instagram && (
-                    <a
-                      href={`https://instagram.com/${company.delivery_instagram.replace("@", "")}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-pink-600 hover:underline"
-                    >
-                      <Instagram className="w-4 h-4" />
-                      {company.delivery_instagram}
+                    <a href={company.delivery_instagram} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-3 text-pink-600 hover:underline">
+                      <Instagram className="w-5 h-5 flex-shrink-0" />
+                      <span className="truncate">{company.delivery_instagram}</span>
                     </a>
                   )}
                   {company.delivery_facebook && (
-                    <a
-                      href={company.delivery_facebook}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center gap-2 text-blue-600 hover:underline"
-                    >
-                      <Facebook className="w-4 h-4" />
-                      Facebook
+                    <a href={company.delivery_facebook} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-3 text-blue-600 hover:underline">
+                      <Facebook className="w-5 h-5 flex-shrink-0" />
+                      <span className="truncate">{company.delivery_facebook}</span>
+                    </a>
+                  )}
+                  {company.delivery_tiktok && (
+                    <a href={company.delivery_tiktok} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-3 text-foreground hover:underline">
+                      <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07z"/>
+                      </svg>
+                      <span className="truncate">{company.delivery_tiktok}</span>
+                    </a>
+                  )}
+                  {company.delivery_twitter && (
+                    <a href={company.delivery_twitter} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-3 text-foreground hover:underline">
+                      <Twitter className="w-5 h-5 flex-shrink-0" />
+                      <span className="truncate">{company.delivery_twitter}</span>
+                    </a>
+                  )}
+                  {company.delivery_youtube && (
+                    <a href={company.delivery_youtube} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-3 text-red-600 hover:underline">
+                      <Youtube className="w-5 h-5 flex-shrink-0" />
+                      <span className="truncate">{company.delivery_youtube}</span>
+                    </a>
+                  )}
+                  {company.delivery_linkedin && (
+                    <a href={company.delivery_linkedin} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-3 text-blue-700 hover:underline">
+                      <Linkedin className="w-5 h-5 flex-shrink-0" />
+                      <span className="truncate">{company.delivery_linkedin}</span>
+                    </a>
+                  )}
+                  {company.delivery_telegram && (
+                    <a href={company.delivery_telegram} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-3 text-sky-500 hover:underline">
+                      <Send className="w-5 h-5 flex-shrink-0" />
+                      <span className="truncate">{company.delivery_telegram}</span>
+                    </a>
+                  )}
+                  {company.delivery_site && (
+                    <a href={company.delivery_site} target="_blank" rel="noopener noreferrer"
+                      className="flex items-center gap-3 text-primary hover:underline">
+                      <Globe className="w-5 h-5 flex-shrink-0" />
+                      <span className="truncate">{company.delivery_site}</span>
                     </a>
                   )}
                 </div>

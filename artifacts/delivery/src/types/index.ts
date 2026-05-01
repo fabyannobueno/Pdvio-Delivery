@@ -24,6 +24,12 @@ export interface Company {
   delivery_whatsapp?: string;
   delivery_instagram?: string;
   delivery_facebook?: string;
+  delivery_tiktok?: string;
+  delivery_twitter?: string;
+  delivery_youtube?: string;
+  delivery_linkedin?: string;
+  delivery_telegram?: string;
+  delivery_site?: string;
   delivery_operating_hours?: OperatingHour[];
   wapi_instance_id?: string;
   wapi_token?: string;
