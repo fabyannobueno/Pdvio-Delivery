@@ -358,6 +358,7 @@ export const PublicStorePage = () => {
             product={selectedProduct}
             onAddToCart={(qty, addons, w) => addToCart(selectedProduct, qty, addons, w)}
             isStoreOpen={storeOpen}
+            primaryColor={company?.delivery_primary_color || "#6d28d9"}
           />
           <WeightCalculator
             isOpen={showWeightCalc}

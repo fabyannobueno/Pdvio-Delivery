@@ -13,11 +13,13 @@ interface ProductDetailModalProps {
   product: Product;
   onAddToCart: (quantity: number, selectedAddons: ProductAddon[], weight?: number) => void;
   isStoreOpen: boolean;
+  primaryColor?: string;
 }
 
-export const ProductDetailModal = ({ isOpen, onClose, product, onAddToCart, isStoreOpen }: ProductDetailModalProps) => {
+export const ProductDetailModal = ({ isOpen, onClose, product, onAddToCart, isStoreOpen, primaryColor = "#6d28d9" }: ProductDetailModalProps) => {
   const [quantity, setQuantity] = useState(1);
   const [selectedAddons, setSelectedAddons] = useState<ProductAddon[]>([]);
+  const [closeHovered, setCloseHovered] = useState(false);
   const [weight, setWeight] = useState(0.5);
 
   const isWeighted = product.stock_unit === "kg" || product.stock_unit === "g";
@@ -58,7 +60,13 @@ export const ProductDetailModal = ({ isOpen, onClose, product, onAddToCart, isSt
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             Detalhes do Produto
-            <button onClick={onClose} className="rounded-sm p-1 opacity-70 transition-opacity hover:opacity-100 hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring">
+            <button
+              onClick={onClose}
+              className="rounded-md p-2 transition-colors"
+              onMouseEnter={() => setCloseHovered(true)}
+              onMouseLeave={() => setCloseHovered(false)}
+              style={closeHovered ? { color: primaryColor, backgroundColor: `${primaryColor}1a` } : {}}
+            >
               <X className="w-4 h-4" />
             </button>
           </DialogTitle>
