@@ -13,6 +13,23 @@ interface StoreInfoModalProps {
   company: Company;
 }
 
+function formatAddress(raw: string): string {
+  try {
+    const obj = JSON.parse(raw);
+    const parts = [
+      obj.logradouro,
+      obj.numero ? `nº ${obj.numero}` : null,
+      obj.complemento || null,
+      obj.bairro,
+      obj.cidade && obj.estado ? `${obj.cidade} — ${obj.estado}` : obj.cidade || obj.estado,
+      obj.cep ? `CEP ${obj.cep}` : null,
+    ].filter(Boolean);
+    return parts.join(", ");
+  } catch {
+    return raw;
+  }
+}
+
 export const StoreInfoModal = ({ isOpen, onClose, company }: StoreInfoModalProps) => {
   const [closeHovered, setCloseHovered] = useState(false);
   const primaryColor = company.delivery_primary_color || "#6d28d9";
@@ -72,7 +89,7 @@ export const StoreInfoModal = ({ isOpen, onClose, company }: StoreInfoModalProps
                     <MapPin className="w-5 h-5 text-muted-foreground mt-0.5" />
                     <div>
                       <p className="font-medium">Endereço</p>
-                      <p className="text-muted-foreground">{company.address}</p>
+                      <p className="text-muted-foreground">{formatAddress(company.address)}</p>
                     </div>
                   </div>
                 )}
