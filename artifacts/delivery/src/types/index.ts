@@ -1,5 +1,5 @@
 export interface OperatingHour {
-  day: number;
+  day: number | string;
   isOpen: boolean;
   openTime: string;
   closeTime: string;

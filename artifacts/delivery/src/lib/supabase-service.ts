@@ -78,6 +78,16 @@ export function isPromotionActive(product: Product): boolean {
   );
 }
 
+const PT_WEEKDAYS: Record<number, string> = {
+  0: "Domingo",
+  1: "Segunda",
+  2: "Terça",
+  3: "Quarta",
+  4: "Quinta",
+  5: "Sexta",
+  6: "Sábado",
+};
+
 export function isStoreOpen(company: Company): boolean {
   const hours = company.delivery_operating_hours;
   if (!hours || hours.length === 0) return true;
@@ -93,14 +103,19 @@ export function isStoreOpen(company: Company): boolean {
     hour12: false,
   }).formatToParts(now);
 
-  const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const enWeekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
   const weekdayStr = parts.find((p) => p.type === "weekday")?.value ?? "";
-  const day = weekdays.indexOf(weekdayStr);
+  const dayIndex = enWeekdays.indexOf(weekdayStr);
+  const todayPt = PT_WEEKDAYS[dayIndex] ?? "";
+
   const h = (parts.find((p) => p.type === "hour")?.value ?? "00").padStart(2, "0");
   const m = (parts.find((p) => p.type === "minute")?.value ?? "00").padStart(2, "0");
   const currentTime = `${h}:${m}`;
 
-  const todayHours = hours.find((entry) => entry.day === day);
+  // Support both Portuguese string days ("Sexta") and numeric days (5)
+  const todayHours = hours.find((entry) =>
+    entry.day === todayPt || entry.day === (dayIndex as unknown as string)
+  );
   if (!todayHours || !todayHours.isOpen) return false;
 
   return currentTime >= todayHours.openTime && currentTime <= todayHours.closeTime;
