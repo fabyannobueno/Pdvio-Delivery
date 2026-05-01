@@ -47,22 +47,22 @@ export const StoreInfoModal = ({ isOpen, onClose, company }: StoreInfoModalProps
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto [&>button:last-child]:hidden">
+      <DialogContent hideCloseButton className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader className="text-left">
-          <DialogTitle className="flex items-center justify-between">
-            <div className="flex items-center space-x-3">
+          <DialogTitle className="flex items-center justify-between gap-2 min-w-0">
+            <div className="flex items-center space-x-3 min-w-0">
               {company.delivery_logo_url ? (
-                <img src={company.delivery_logo_url} alt={company.name} className="w-10 h-10 object-cover rounded-full" />
+                <img src={company.delivery_logo_url} alt={company.name} className="w-10 h-10 object-cover rounded-full flex-shrink-0" />
               ) : (
-                <div className="w-10 h-10 bg-primary flex items-center justify-center rounded-full">
+                <div className="w-10 h-10 bg-primary flex items-center justify-center rounded-full flex-shrink-0">
                   <span className="text-white text-lg font-bold">{company.name.charAt(0)}</span>
                 </div>
               )}
-              <h1 className="text-xl font-bold">{company.name}</h1>
+              <h1 className="text-xl font-bold truncate">{company.name}</h1>
             </div>
             <button
               onClick={onClose}
-              className="rounded-md p-2 transition-colors"
+              className="rounded-md p-2 transition-colors flex-shrink-0"
               onMouseEnter={() => setCloseHovered(true)}
               onMouseLeave={() => setCloseHovered(false)}
               style={closeHovered ? { color: primaryColor, backgroundColor: `${primaryColor}1a` } : {}}
@@ -86,29 +86,29 @@ export const StoreInfoModal = ({ isOpen, onClose, company }: StoreInfoModalProps
               <div className="space-y-3">
                 {company.address && (
                   <div className="flex items-start space-x-3">
-                    <MapPin className="w-5 h-5 text-muted-foreground mt-0.5" />
-                    <div>
+                    <MapPin className="w-5 h-5 text-muted-foreground mt-0.5 flex-shrink-0" />
+                    <div className="min-w-0">
                       <p className="font-medium">Endereço</p>
-                      <p className="text-muted-foreground">{formatAddress(company.address)}</p>
+                      <p className="text-muted-foreground break-words">{formatAddress(company.address)}</p>
                     </div>
                   </div>
                 )}
                 {company.delivery_whatsapp && (
                   <div className="flex items-center space-x-3">
-                    <Phone className="w-5 h-5 text-muted-foreground" />
-                    <div>
+                    <Phone className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                    <div className="min-w-0">
                       <p className="font-medium">WhatsApp</p>
                       {whatsappNumber ? (
                         <a
                           href={`https://wa.me/${whatsappNumber}`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-green-600 hover:underline"
+                          className="text-green-600 hover:underline truncate block"
                         >
                           {formatPhone(company.delivery_whatsapp)}
                         </a>
                       ) : (
-                        <p className="text-muted-foreground">{company.delivery_whatsapp}</p>
+                        <p className="text-muted-foreground truncate">{company.delivery_whatsapp}</p>
                       )}
                     </div>
                   </div>
@@ -144,36 +144,36 @@ export const StoreInfoModal = ({ isOpen, onClose, company }: StoreInfoModalProps
               <div className="space-y-3">
                 {company.delivery_time && (
                   <div className="flex items-center space-x-3">
-                    <Truck className="w-5 h-5 text-muted-foreground" />
-                    <div>
+                    <Truck className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                    <div className="min-w-0">
                       <p className="font-medium">Tempo de Entrega</p>
-                      <p className="text-muted-foreground">{company.delivery_time}</p>
+                      <p className="text-muted-foreground break-words">{company.delivery_time}</p>
                     </div>
                   </div>
                 )}
                 {company.delivery_pickup_time && (
                   <div className="flex items-center space-x-3">
-                    <ShoppingBag className="w-5 h-5 text-muted-foreground" />
-                    <div>
+                    <ShoppingBag className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                    <div className="min-w-0">
                       <p className="font-medium">Tempo de Retirada</p>
-                      <p className="text-muted-foreground">{company.delivery_pickup_time}</p>
+                      <p className="text-muted-foreground break-words">{company.delivery_pickup_time}</p>
                     </div>
                   </div>
                 )}
                 {company.delivery_min_order > 0 && (
                   <div className="flex items-center space-x-3">
-                    <DollarSign className="w-5 h-5 text-muted-foreground" />
-                    <div>
+                    <DollarSign className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                    <div className="min-w-0">
                       <p className="font-medium">Pedido Mínimo</p>
                       <p className="text-muted-foreground">R$ {company.delivery_min_order.toFixed(2).replace(".", ",")}</p>
                     </div>
                   </div>
                 )}
-                <div className="flex items-center space-x-3">
-                  <Truck className="w-5 h-5 text-muted-foreground" />
-                  <div>
+                <div className="flex items-start space-x-3">
+                  <Truck className="w-5 h-5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                  <div className="min-w-0">
                     <p className="font-medium">Taxa de Entrega</p>
-                    <p className="text-muted-foreground">
+                    <p className="text-muted-foreground break-words">
                       {company.delivery_fee === 0
                         ? "Grátis"
                         : `R$ ${company.delivery_fee.toFixed(2).replace(".", ",")}`}
@@ -193,24 +193,24 @@ export const StoreInfoModal = ({ isOpen, onClose, company }: StoreInfoModalProps
             <Card>
               <CardContent className="p-4">
                 <h3 className="font-medium mb-4">Redes Sociais e Site</h3>
-                <div className="flex flex-col gap-3">
+                <div className="flex flex-col gap-3 min-w-0">
                   {company.delivery_instagram && (
                     <a href={company.delivery_instagram} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-3 text-pink-600 hover:underline">
+                      className="flex items-center gap-3 text-pink-600 hover:underline min-w-0">
                       <Instagram className="w-5 h-5 flex-shrink-0" />
                       <span className="truncate">{company.delivery_instagram}</span>
                     </a>
                   )}
                   {company.delivery_facebook && (
                     <a href={company.delivery_facebook} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-3 text-blue-600 hover:underline">
+                      className="flex items-center gap-3 text-blue-600 hover:underline min-w-0">
                       <Facebook className="w-5 h-5 flex-shrink-0" />
                       <span className="truncate">{company.delivery_facebook}</span>
                     </a>
                   )}
                   {company.delivery_tiktok && (
                     <a href={company.delivery_tiktok} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-3 text-foreground hover:underline">
+                      className="flex items-center gap-3 text-foreground hover:underline min-w-0">
                       <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07z"/>
                       </svg>
@@ -219,35 +219,35 @@ export const StoreInfoModal = ({ isOpen, onClose, company }: StoreInfoModalProps
                   )}
                   {company.delivery_twitter && (
                     <a href={company.delivery_twitter} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-3 text-foreground hover:underline">
+                      className="flex items-center gap-3 text-foreground hover:underline min-w-0">
                       <Twitter className="w-5 h-5 flex-shrink-0" />
                       <span className="truncate">{company.delivery_twitter}</span>
                     </a>
                   )}
                   {company.delivery_youtube && (
                     <a href={company.delivery_youtube} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-3 text-red-600 hover:underline">
+                      className="flex items-center gap-3 text-red-600 hover:underline min-w-0">
                       <Youtube className="w-5 h-5 flex-shrink-0" />
                       <span className="truncate">{company.delivery_youtube}</span>
                     </a>
                   )}
                   {company.delivery_linkedin && (
                     <a href={company.delivery_linkedin} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-3 text-blue-700 hover:underline">
+                      className="flex items-center gap-3 text-blue-700 hover:underline min-w-0">
                       <Linkedin className="w-5 h-5 flex-shrink-0" />
                       <span className="truncate">{company.delivery_linkedin}</span>
                     </a>
                   )}
                   {company.delivery_telegram && (
                     <a href={company.delivery_telegram} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-3 text-sky-500 hover:underline">
+                      className="flex items-center gap-3 text-sky-500 hover:underline min-w-0">
                       <Send className="w-5 h-5 flex-shrink-0" />
                       <span className="truncate">{company.delivery_telegram}</span>
                     </a>
                   )}
                   {company.delivery_site && (
                     <a href={company.delivery_site} target="_blank" rel="noopener noreferrer"
-                      className="flex items-center gap-3 text-primary hover:underline">
+                      className="flex items-center gap-3 text-primary hover:underline min-w-0">
                       <Globe className="w-5 h-5 flex-shrink-0" />
                       <span className="truncate">{company.delivery_site}</span>
                     </a>
