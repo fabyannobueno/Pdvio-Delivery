@@ -83,15 +83,27 @@ export function isStoreOpen(company: Company): boolean {
   if (!hours || hours.length === 0) return true;
 
   const now = new Date();
-  const day = now.getDay();
-  const currentTime = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
+  const tz = "America/Sao_Paulo";
 
-  const todayHours = hours.find((h) => h.day === day);
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone: tz,
+    weekday: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  }).formatToParts(now);
+
+  const weekdays = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  const weekdayStr = parts.find((p) => p.type === "weekday")?.value ?? "";
+  const day = weekdays.indexOf(weekdayStr);
+  const h = (parts.find((p) => p.type === "hour")?.value ?? "00").padStart(2, "0");
+  const m = (parts.find((p) => p.type === "minute")?.value ?? "00").padStart(2, "0");
+  const currentTime = `${h}:${m}`;
+
+  const todayHours = hours.find((entry) => entry.day === day);
   if (!todayHours || !todayHours.isOpen) return false;
 
-  return (
-    currentTime >= todayHours.openTime && currentTime <= todayHours.closeTime
-  );
+  return currentTime >= todayHours.openTime && currentTime <= todayHours.closeTime;
 }
 
 export async function createDeliveryOrder(params: {
