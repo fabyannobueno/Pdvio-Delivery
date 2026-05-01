@@ -13,8 +13,6 @@ const PAYMENT_METHODS: { id: string; name: string; icon: React.ElementType }[] =
   { id: "debit_card", name: "Cartão de Débito", icon: CreditCard },
   { id: "cash", name: "Dinheiro", icon: DollarSign },
   { id: "ticket", name: "Vale Refeição", icon: Receipt },
-  { id: "mixed", name: "Misto", icon: Wallet },
-  { id: "crediario", name: "Crediário", icon: Receipt },
 ];
 
 interface StoreInfoModalProps {
