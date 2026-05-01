@@ -45,11 +45,29 @@ export const PublicStorePage = () => {
       setCompany(co);
       applyThemeColor(co.delivery_primary_color || "#6d28d9");
       document.title = `${co.name} | PDVIO Delivery`;
+      if (co.delivery_logo_url) {
+        let favicon = document.querySelector<HTMLLinkElement>("link[rel='icon']");
+        if (!favicon) {
+          favicon = document.createElement("link");
+          favicon.rel = "icon";
+          document.head.appendChild(favicon);
+        }
+        favicon.type = co.delivery_logo_url.startsWith("data:") ? co.delivery_logo_url.split(";")[0].replace("data:", "") : "image/png";
+        favicon.href = co.delivery_logo_url;
+      }
       const prods = await getProductsByCompanyId(co.id);
       setProducts(prods);
       setLoading(false);
     };
     load();
+    return () => {
+      document.title = "PDVIO Delivery";
+      const favicon = document.querySelector<HTMLLinkElement>("link[rel='icon']");
+      if (favicon) {
+        favicon.type = "image/png";
+        favicon.href = "/favicon.png";
+      }
+    };
   }, [slug]);
 
   useEffect(() => {
