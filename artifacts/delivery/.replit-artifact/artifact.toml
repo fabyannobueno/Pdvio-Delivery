@@ -1,31 +1,32 @@
 kind = "web"
-previewPath = "/"
-title = "PDVIO Delivery"
-version = "1.0.0"
-id = "artifacts/delivery"
-router = "path"
+  previewPath = "/"
+  title = "PDVIO Delivery"
+  version = "1.0.0"
+  id = "artifacts/delivery"
+  router = "path"
 
-[[integratedSkills]]
-name = "react-vite"
-version = "1.0.0"
+  [[integratedSkills]]
+  name = "react-vite"
+  version = "1.0.0"
 
-[[services]]
-name = "web"
-paths = [ "/" ]
-localPort = 22214
+  [[services]]
+  name = "web"
+  paths = [ "/" ]
+  localPort = 5173
 
-[services.development]
-run = "pnpm --filter @workspace/delivery run dev"
+  [services.development]
+  run = "pnpm --filter @workspace/delivery run dev"
 
-[services.production]
-build = [ "pnpm", "--filter", "@workspace/delivery", "run", "build" ]
-publicDir = "artifacts/delivery/dist/public"
-serve = "static"
+  [services.production]
+  build = [ "pnpm", "--filter", "@workspace/delivery", "run", "build" ]
+  publicDir = "artifacts/delivery/dist/public"
+  serve = "static"
 
-[[services.production.rewrites]]
-from = "/*"
-to = "/index.html"
+  [[services.production.rewrites]]
+  from = "/*"
+  to = "/index.html"
 
-[services.env]
-PORT = "22214"
-BASE_PATH = "/"
+  [services.env]
+  PORT = "5173"
+  BASE_PATH = "/"
+  
