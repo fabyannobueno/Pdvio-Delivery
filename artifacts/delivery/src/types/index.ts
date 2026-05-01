@@ -1,0 +1,103 @@
+export interface OperatingHour {
+  day: number;
+  isOpen: boolean;
+  openTime: string;
+  closeTime: string;
+}
+
+export interface Company {
+  id: string;
+  name: string;
+  phone?: string;
+  address?: string;
+  delivery_enabled: boolean;
+  delivery_slug: string;
+  delivery_description?: string;
+  delivery_logo_url?: string;
+  delivery_cover_url?: string;
+  delivery_fee: number;
+  delivery_min_order: number;
+  delivery_free_threshold?: number;
+  delivery_time?: string;
+  delivery_pickup_time?: string;
+  delivery_primary_color: string;
+  delivery_whatsapp?: string;
+  delivery_instagram?: string;
+  delivery_facebook?: string;
+  delivery_operating_hours?: OperatingHour[];
+  wapi_instance_id?: string;
+  wapi_token?: string;
+}
+
+export interface ProductAddon {
+  id: string;
+  product_id: string;
+  name: string;
+  price: number;
+  sort_order: number;
+}
+
+export interface Product {
+  id: string;
+  company_id: string;
+  name: string;
+  description?: string;
+  category?: string;
+  sale_price: number;
+  stock_unit: string;
+  is_active: boolean;
+  is_promotion: boolean;
+  promotion_price?: number;
+  promotion_start?: string;
+  promotion_end?: string;
+  image_url?: string;
+  product_addons?: ProductAddon[];
+}
+
+export interface CartItem {
+  productId: string;
+  name: string;
+  price: number;
+  quantity: number;
+  selectedAddons: Array<{ id: string; name: string; price: number }>;
+  totalPrice: number;
+  imageUrl?: string;
+  unit: string;
+  weight?: number;
+}
+
+export interface Sale {
+  id: string;
+  company_id: string;
+  numeric_id?: number;
+  subtotal: number;
+  discount_amount: number;
+  total: number;
+  payment_method: string;
+  payment_amount: number;
+  change_amount: number;
+  notes?: string;
+  status: string;
+  created_at: string;
+  sale_items?: SaleItem[];
+}
+
+export interface SaleItem {
+  id: string;
+  sale_id: string;
+  product_id?: string;
+  product_name: string;
+  quantity: number;
+  unit_price: number;
+  discount_amount: number;
+  subtotal: number;
+  addons: Array<{ id: string; name: string; price: number }>;
+  notes?: string;
+}
+
+export type PaymentMethod =
+  | "pix"
+  | "cash"
+  | "credit_card"
+  | "debit_card"
+  | "ticket";
