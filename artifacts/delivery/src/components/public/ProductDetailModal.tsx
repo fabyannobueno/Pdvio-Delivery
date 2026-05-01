@@ -1,11 +1,27 @@
 import { useState } from "react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { X, Plus, Minus, Clock } from "lucide-react";
 import type { Product, ProductAddon } from "@/types";
 import { getEffectivePrice, isPromotionActive } from "@/lib/supabase-service";
+
+const PrimaryIconBtn = ({ onClick, disabled, children, primaryColor }: { onClick: () => void; disabled?: boolean; children: React.ReactNode; primaryColor: string }) => {
+  const [hovered, setHovered] = useState(false);
+  return (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      className="w-9 h-9 rounded-md border border-input flex items-center justify-center transition-colors disabled:opacity-50 disabled:pointer-events-none"
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      style={hovered ? { color: primaryColor, borderColor: primaryColor, backgroundColor: `${primaryColor}1a` } : {}}
+    >
+      {children}
+    </button>
+  );
+};
 
 interface ProductDetailModalProps {
   isOpen: boolean;
@@ -106,9 +122,9 @@ export const ProductDetailModal = ({ isOpen, onClose, product, onAddToCart, isSt
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">Peso ({product.stock_unit})</label>
               <div className="flex items-center space-x-4">
-                <Button size="icon" variant="outline" onClick={() => setWeight(Math.max(0.1, weight - 0.1))} disabled={weight <= 0.1}><Minus className="w-4 h-4" /></Button>
+                <PrimaryIconBtn primaryColor={primaryColor} onClick={() => setWeight(Math.max(0.1, weight - 0.1))} disabled={weight <= 0.1}><Minus className="w-4 h-4" /></PrimaryIconBtn>
                 <span className="text-lg font-medium min-w-[80px] text-center">{formatWeight(weight)}</span>
-                <Button size="icon" variant="outline" onClick={() => setWeight(weight + 0.1)}><Plus className="w-4 h-4" /></Button>
+                <PrimaryIconBtn primaryColor={primaryColor} onClick={() => setWeight(weight + 0.1)}><Plus className="w-4 h-4" /></PrimaryIconBtn>
               </div>
             </div>
           )}
@@ -137,9 +153,9 @@ export const ProductDetailModal = ({ isOpen, onClose, product, onAddToCart, isSt
             <div>
               <label className="block text-sm font-medium text-foreground mb-2">Quantidade</label>
               <div className="flex items-center space-x-4">
-                <Button size="icon" variant="outline" onClick={() => setQuantity(Math.max(1, quantity - 1))} disabled={quantity <= 1}><Minus className="w-4 h-4" /></Button>
+                <PrimaryIconBtn primaryColor={primaryColor} onClick={() => setQuantity(Math.max(1, quantity - 1))} disabled={quantity <= 1}><Minus className="w-4 h-4" /></PrimaryIconBtn>
                 <span className="text-lg font-medium min-w-[40px] text-center">{quantity}</span>
-                <Button size="icon" variant="outline" onClick={() => setQuantity(quantity + 1)}><Plus className="w-4 h-4" /></Button>
+                <PrimaryIconBtn primaryColor={primaryColor} onClick={() => setQuantity(quantity + 1)}><Plus className="w-4 h-4" /></PrimaryIconBtn>
               </div>
             </div>
           )}
