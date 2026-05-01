@@ -280,8 +280,8 @@ export function hexToHsl(hex: string): string {
 
 export function applyThemeColor(primaryColor: string): void {
   const hsl = hexToHsl(primaryColor);
-  document.documentElement.style.setProperty("--primary", `hsl(${hsl})`);
-  document.documentElement.style.setProperty("--ring", `hsl(${hsl})`);
+  document.documentElement.style.setProperty("--primary", hsl);
+  document.documentElement.style.setProperty("--ring", hsl);
 }
 
 export function formatCurrency(value: number): string {
