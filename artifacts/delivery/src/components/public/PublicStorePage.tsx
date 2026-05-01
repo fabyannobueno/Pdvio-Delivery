@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams } from "wouter";
 import { getCompanyBySlug, getProductsByCompanyId, getEffectivePrice, isPromotionActive, isStoreOpen, applyThemeColor } from "@/lib/supabase-service";
+import { supabase } from "@/lib/supabase";
 import { ShoppingCart } from "./ShoppingCart";
 import { WeightCalculator } from "./WeightCalculator";
 import { ProductDetailModal } from "./ProductDetailModal";
@@ -79,6 +80,30 @@ export const PublicStorePage = () => {
   useEffect(() => {
     if (company?.id) localStorage.setItem(`cart_${company.id}`, JSON.stringify(cart));
   }, [cart, company?.id]);
+
+  // Realtime: re-fetch company when admin updates it (hours, theme, etc.)
+  useEffect(() => {
+    if (!company?.id) return;
+    const channel = supabase
+      .channel(`company_realtime_${company.id}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "companies", filter: `id=eq.${company.id}` }, (payload) => {
+        const updated = payload.new as typeof company;
+        setCompany(updated);
+        applyThemeColor(updated.delivery_primary_color || "#6d28d9");
+        if (updated.delivery_logo_url) {
+          const favicon = document.querySelector<HTMLLinkElement>("link[rel='icon']");
+          if (favicon) favicon.href = updated.delivery_logo_url;
+        }
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [company?.id]);
+
+  // Tick every 60s to re-evaluate store open status based on current time
+  useEffect(() => {
+    const interval = setInterval(() => setCompany(prev => prev ? { ...prev } : prev), 60_000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     let filtered = products;
