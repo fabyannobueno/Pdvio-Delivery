@@ -54,11 +54,13 @@ export const ProductDetailModal = ({ isOpen, onClose, product, onAddToCart, isSt
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent hideCloseButton className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             Detalhes do Produto
-            <Button variant="ghost" size="icon" onClick={onClose}><X className="w-4 h-4" /></Button>
+            <button onClick={onClose} className="rounded-sm p-1 opacity-70 transition-opacity hover:opacity-100 hover:bg-accent focus:outline-none focus:ring-2 focus:ring-ring">
+              <X className="w-4 h-4" />
+            </button>
           </DialogTitle>
         </DialogHeader>
 
