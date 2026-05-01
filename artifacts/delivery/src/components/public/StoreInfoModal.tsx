@@ -198,14 +198,14 @@ export const StoreInfoModal = ({ isOpen, onClose, company }: StoreInfoModalProps
                     <a href={company.delivery_instagram} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-3 text-pink-600 hover:underline min-w-0">
                       <Instagram className="w-5 h-5 flex-shrink-0" />
-                      <span className="truncate">{company.delivery_instagram}</span>
+                      <span>Instagram</span>
                     </a>
                   )}
                   {company.delivery_facebook && (
                     <a href={company.delivery_facebook} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-3 text-blue-600 hover:underline min-w-0">
                       <Facebook className="w-5 h-5 flex-shrink-0" />
-                      <span className="truncate">{company.delivery_facebook}</span>
+                      <span>Facebook</span>
                     </a>
                   )}
                   {company.delivery_tiktok && (
@@ -214,42 +214,42 @@ export const StoreInfoModal = ({ isOpen, onClose, company }: StoreInfoModalProps
                       <svg className="w-5 h-5 flex-shrink-0" viewBox="0 0 24 24" fill="currentColor">
                         <path d="M19.59 6.69a4.83 4.83 0 0 1-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 0 1-2.88 2.5 2.89 2.89 0 0 1-2.89-2.89 2.89 2.89 0 0 1 2.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 0 0-.79-.05 6.34 6.34 0 0 0-6.34 6.34 6.34 6.34 0 0 0 6.34 6.34 6.34 6.34 0 0 0 6.33-6.34V8.69a8.18 8.18 0 0 0 4.78 1.52V6.76a4.85 4.85 0 0 1-1.01-.07z"/>
                       </svg>
-                      <span className="truncate">{company.delivery_tiktok}</span>
+                      <span>TikTok</span>
                     </a>
                   )}
                   {company.delivery_twitter && (
                     <a href={company.delivery_twitter} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-3 text-foreground hover:underline min-w-0">
                       <Twitter className="w-5 h-5 flex-shrink-0" />
-                      <span className="truncate">{company.delivery_twitter}</span>
+                      <span>X (Twitter)</span>
                     </a>
                   )}
                   {company.delivery_youtube && (
                     <a href={company.delivery_youtube} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-3 text-red-600 hover:underline min-w-0">
                       <Youtube className="w-5 h-5 flex-shrink-0" />
-                      <span className="truncate">{company.delivery_youtube}</span>
+                      <span>YouTube</span>
                     </a>
                   )}
                   {company.delivery_linkedin && (
                     <a href={company.delivery_linkedin} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-3 text-blue-700 hover:underline min-w-0">
                       <Linkedin className="w-5 h-5 flex-shrink-0" />
-                      <span className="truncate">{company.delivery_linkedin}</span>
+                      <span>LinkedIn</span>
                     </a>
                   )}
                   {company.delivery_telegram && (
                     <a href={company.delivery_telegram} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-3 text-sky-500 hover:underline min-w-0">
                       <Send className="w-5 h-5 flex-shrink-0" />
-                      <span className="truncate">{company.delivery_telegram}</span>
+                      <span>Telegram</span>
                     </a>
                   )}
                   {company.delivery_site && (
                     <a href={company.delivery_site} target="_blank" rel="noopener noreferrer"
                       className="flex items-center gap-3 text-primary hover:underline min-w-0">
                       <Globe className="w-5 h-5 flex-shrink-0" />
-                      <span className="truncate">{company.delivery_site}</span>
+                      <span>Site</span>
                     </a>
                   )}
                 </div>
