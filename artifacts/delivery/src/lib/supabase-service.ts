@@ -24,7 +24,12 @@ export async function getCompanyBySlug(slug: string): Promise<Company | null> {
   }
 
   if (!data) {
-    console.warn(`No company found with delivery_slug = "${slug}"`);
+    // Log all slugs to diagnose mismatch
+    const { data: allCompanies } = await supabase
+      .from("companies")
+      .select("id, name, delivery_slug, delivery_enabled")
+      .limit(20);
+    console.warn(`No company found with delivery_slug ilike "${slug}". Available companies:`, JSON.stringify(allCompanies));
     return null;
   }
 
