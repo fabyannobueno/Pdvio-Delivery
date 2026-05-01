@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Separator } from "@/components/ui/separator";
@@ -15,6 +16,8 @@ interface ShoppingCartProps {
 }
 
 export const ShoppingCart = ({ isOpen, onClose, cart, setCart, company, onCheckout }: ShoppingCartProps) => {
+  const [closeHovered, setCloseHovered] = useState(false);
+  const primaryColor = company.delivery_primary_color || "#6d28d9";
   const updateQuantity = (productId: string, addons: CartItem["selectedAddons"], change: number) => {
     setCart(
       cart
@@ -61,14 +64,9 @@ export const ShoppingCart = ({ isOpen, onClose, cart, setCart, company, onChecko
             <button
               onClick={onClose}
               className="rounded-md p-2 transition-colors"
-              onMouseEnter={e => {
-                (e.currentTarget as HTMLButtonElement).style.color = "hsl(var(--primary))";
-                (e.currentTarget as HTMLButtonElement).style.backgroundColor = "hsl(var(--primary) / 0.1)";
-              }}
-              onMouseLeave={e => {
-                (e.currentTarget as HTMLButtonElement).style.color = "";
-                (e.currentTarget as HTMLButtonElement).style.backgroundColor = "";
-              }}
+              onMouseEnter={() => setCloseHovered(true)}
+              onMouseLeave={() => setCloseHovered(false)}
+              style={closeHovered ? { color: primaryColor, backgroundColor: `${primaryColor}1a` } : {}}
             >
               <X className="w-4 h-4" />
             </button>
