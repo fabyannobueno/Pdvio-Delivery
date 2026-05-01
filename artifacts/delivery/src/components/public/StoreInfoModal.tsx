@@ -288,14 +288,15 @@ export const StoreInfoModal = ({ isOpen, onClose, company }: StoreInfoModalProps
           )}
         </div>
 
-        <div className="pt-2 border-t text-center">
+        <div className="pt-2 border-t flex flex-col items-center gap-1">
+          <span className="text-xs text-muted-foreground">Powered by</span>
           <a
             href="https://www.pdvio.com.br/"
             target="_blank"
             rel="noopener noreferrer"
-            className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+            className="opacity-80 hover:opacity-100 transition-opacity"
           >
-            Powered by <span className="font-semibold">PDVIO</span>
+            <img src="/logo.png" alt="PDVIO" className="h-6 object-contain" />
           </a>
         </div>
       </DialogContent>
