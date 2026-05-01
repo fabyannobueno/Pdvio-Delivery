@@ -1,4 +1,4 @@
-import { useState } from "react";
+import React, { useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -7,12 +7,14 @@ import type { Company } from "@/types";
 
 const DAY_NAMES = ["Domingo", "Segunda-feira", "Terça-feira", "Quarta-feira", "Quinta-feira", "Sexta-feira", "Sábado"];
 
-const PAYMENT_METHODS = [
+const PAYMENT_METHODS: { id: string; name: string; icon: React.ElementType }[] = [
   { id: "pix", name: "PIX", icon: Smartphone },
   { id: "credit_card", name: "Cartão de Crédito", icon: CreditCard },
   { id: "debit_card", name: "Cartão de Débito", icon: CreditCard },
   { id: "cash", name: "Dinheiro", icon: DollarSign },
   { id: "ticket", name: "Vale Refeição", icon: Receipt },
+  { id: "mixed", name: "Misto", icon: Wallet },
+  { id: "crediario", name: "Crediário", icon: Receipt },
 ];
 
 interface StoreInfoModalProps {
@@ -197,7 +199,7 @@ export const StoreInfoModal = ({ isOpen, onClose, company }: StoreInfoModalProps
             </CardContent>
           </Card>
 
-          {company.payment_settings && Object.values(company.payment_settings).some(Boolean) && (
+          {company.payment_settings?.enabled && company.payment_settings.enabled.length > 0 && (
             <Card>
               <CardContent className="p-4">
                 <h3 className="font-medium mb-4 flex items-center gap-2">
@@ -205,7 +207,7 @@ export const StoreInfoModal = ({ isOpen, onClose, company }: StoreInfoModalProps
                   Formas de Pagamento
                 </h3>
                 <div className="flex flex-wrap gap-2">
-                  {PAYMENT_METHODS.filter(pm => company.payment_settings![pm.id]).map(pm => {
+                  {PAYMENT_METHODS.filter(pm => company.payment_settings!.enabled.includes(pm.id)).map(pm => {
                     const Icon = pm.icon;
                     return (
                       <div key={pm.id} className="flex items-center gap-2 px-3 py-1.5 rounded-full border text-sm">
