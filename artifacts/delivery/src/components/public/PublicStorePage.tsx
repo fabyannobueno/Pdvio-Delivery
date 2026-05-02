@@ -15,7 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, ShoppingCart as CartIcon, Tag, Clock, Truck, ChevronLeft, ChevronRight } from "lucide-react";
+import { Search, ShoppingCart as CartIcon, Tag, Clock, Motorbike, ChevronLeft, ChevronRight, DollarSign, Star } from "lucide-react";
 import type { Company, Product, CartItem, ProductAddon } from "@/types";
 
 export const PublicStorePage = () => {
@@ -252,9 +252,20 @@ export const PublicStorePage = () => {
                     <Clock className="w-3 h-3" /> Aberto
                   </Badge>
                 )}
+                {company.delivery_rating && (
+                  <Badge variant="outline" className="flex items-center gap-1 text-yellow-500 border-yellow-400">
+                    <Star className="w-3 h-3 fill-yellow-400" /> {company.delivery_rating.toFixed(1)}
+                    {company.delivery_rating_count ? ` (${company.delivery_rating_count})` : ""}
+                  </Badge>
+                )}
                 {company.delivery_time && (
                   <Badge variant="outline" className="flex items-center gap-1">
-                    <Truck className="w-3 h-3" /> {company.delivery_time}
+                    <Motorbike className="w-3 h-3" /> {company.delivery_time}
+                  </Badge>
+                )}
+                {company.delivery_min_order > 0 && (
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <DollarSign className="w-3 h-3" /> Mín. R$ {company.delivery_min_order.toFixed(2).replace(".", ",")}
                   </Badge>
                 )}
                 {company.delivery_fee === 0 ? (
@@ -283,9 +294,20 @@ export const PublicStorePage = () => {
                 <Clock className="w-3 h-3" /> Aberto
               </Badge>
             )}
+            {company.delivery_rating && (
+              <Badge variant="outline" className="flex items-center gap-1 text-yellow-500 border-yellow-400">
+                <Star className="w-3 h-3 fill-yellow-400" /> {company.delivery_rating.toFixed(1)}
+                {company.delivery_rating_count ? ` (${company.delivery_rating_count})` : ""}
+              </Badge>
+            )}
             {company.delivery_time && (
               <Badge variant="outline" className="flex items-center gap-1">
-                <Truck className="w-3 h-3" /> {company.delivery_time}
+                <Motorbike className="w-3 h-3" /> {company.delivery_time}
+              </Badge>
+            )}
+            {company.delivery_min_order > 0 && (
+              <Badge variant="outline" className="flex items-center gap-1">
+                <DollarSign className="w-3 h-3" /> Mín. R$ {company.delivery_min_order.toFixed(2).replace(".", ",")}
               </Badge>
             )}
             {company.delivery_fee === 0 ? (

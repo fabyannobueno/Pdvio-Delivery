@@ -31,6 +31,8 @@ export interface Company {
   delivery_telegram?: string;
   delivery_site?: string;
   delivery_operating_hours?: OperatingHour[];
+  delivery_rating?: number;
+  delivery_rating_count?: number;
   payment_settings?: { enabled: string[] };
   wapi_instance_id?: string;
   wapi_token?: string;
