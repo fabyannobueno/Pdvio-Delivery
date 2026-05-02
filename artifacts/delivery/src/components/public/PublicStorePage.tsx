@@ -226,22 +226,52 @@ export const PublicStorePage = () => {
         <div className="px-4 md:px-8 py-6">
           {/* Header when no cover */}
           {!company.delivery_cover_url && (
-            <div className="flex items-center space-x-4 mb-6">
-              {company.delivery_logo_url ? (
-                <img src={company.delivery_logo_url} alt={company.name} className="w-16 h-16 rounded-full object-cover" />
-              ) : (
-                <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center">
-                  <span className="text-white text-2xl font-bold">{company.name.charAt(0)}</span>
+            <div className="mb-6">
+              <div className="flex items-center space-x-4 mb-3">
+                {company.delivery_logo_url ? (
+                  <img src={company.delivery_logo_url} alt={company.name} className="w-16 h-16 rounded-full object-cover" />
+                ) : (
+                  <div className="w-16 h-16 rounded-full bg-primary flex items-center justify-center">
+                    <span className="text-white text-2xl font-bold">{company.name.charAt(0)}</span>
+                  </div>
+                )}
+                <div>
+                  <h1 className="text-2xl font-bold">{company.name}</h1>
+                  {company.delivery_description && <p className="text-muted-foreground">{company.delivery_description}</p>}
                 </div>
-              )}
-              <div>
-                <h1 className="text-2xl font-bold">{company.name}</h1>
-                {company.delivery_description && <p className="text-muted-foreground">{company.delivery_description}</p>}
+              </div>
+              {/* Info chips — below name, no cover */}
+              <div className="flex flex-wrap gap-2">
+                {!storeOpen && (
+                  <Badge variant="destructive" className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> Fechado
+                  </Badge>
+                )}
+                {storeOpen && (
+                  <Badge className="bg-green-500 text-white flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> Aberto
+                  </Badge>
+                )}
+                {company.delivery_time && (
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <Truck className="w-3 h-3" /> {company.delivery_time}
+                  </Badge>
+                )}
+                {company.delivery_fee === 0 ? (
+                  <Badge variant="outline" className="flex items-center gap-1 text-green-600 border-green-600">
+                    <Tag className="w-3 h-3" /> Entrega grátis
+                  </Badge>
+                ) : company.delivery_fee > 0 ? (
+                  <Badge variant="outline" className="flex items-center gap-1">
+                    <Tag className="w-3 h-3" /> Taxa: R$ {company.delivery_fee.toFixed(2).replace(".", ",")}
+                  </Badge>
+                ) : null}
               </div>
             </div>
           )}
 
-          {/* Info chips */}
+          {/* Info chips — with cover (below cover image) */}
+          {company.delivery_cover_url && (
           <div className="flex flex-wrap gap-2 mb-6">
             {!storeOpen && (
               <Badge variant="destructive" className="flex items-center gap-1">
@@ -268,6 +298,7 @@ export const PublicStorePage = () => {
               </Badge>
             ) : null}
           </div>
+          )}
 
           {/* Search */}
           <div className="relative mb-4">
