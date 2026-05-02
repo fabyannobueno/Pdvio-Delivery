@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,12 +30,11 @@ const PAYMENT_METHODS = [
 
 export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company }: CheckoutModalProps) => {
   const { toast } = useToast();
+  const [, navigate] = useLocation();
   const [deliveryType, setDeliveryType] = useState<"delivery" | "pickup">("delivery");
   const [customerData, setCustomerData] = useState({ name: "", phone: "", cep: "", street: "", number: "", neighborhood: "", city: "", state: "" });
   const [orderNotes, setOrderNotes] = useState("");
   const [loading, setLoading] = useState(false);
-  const [success, setSuccess] = useState(false);
-  const [orderId, setOrderId] = useState<string | null>(null);
   const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>("pix");
 
   useEffect(() => {
@@ -145,10 +145,10 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company }: Check
         await sendWhatsAppOrder(company, message, customerData.phone);
       }
 
-      setOrderId(sale.id);
-      setSuccess(true);
       setCart([]);
       localStorage.removeItem(`cart_${company.id}`);
+      onClose();
+      navigate(`/${company.delivery_slug}/pedido/${sale.id}`);
     } catch (err) {
       console.error(err);
       toast({ title: "Erro ao finalizar pedido", description: "Tente novamente.", variant: "destructive" });
@@ -156,32 +156,6 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company }: Check
       setLoading(false);
     }
   };
-
-  const handleClose = () => {
-    setSuccess(false);
-    setOrderId(null);
-    onClose();
-  };
-
-  if (success) {
-    return (
-      <Dialog open={isOpen} onOpenChange={handleClose}>
-        <DialogContent className="max-w-md">
-          <div className="flex flex-col items-center py-8 space-y-4">
-            <CheckCircle2 className="w-16 h-16 text-green-500" />
-            <h2 className="text-2xl font-bold text-center">Pedido Realizado!</h2>
-            <p className="text-muted-foreground text-center">
-              Seu pedido foi registrado com sucesso. Em breve entraremos em contato para confirmação.
-            </p>
-            {orderId && (
-              <p className="text-sm text-muted-foreground">ID do pedido: {orderId.slice(0, 8).toUpperCase()}</p>
-            )}
-            <Button className="w-full" onClick={handleClose}>Fechar</Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    );
-  }
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

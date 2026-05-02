@@ -133,9 +133,11 @@ export async function createDeliveryOrder(params: {
   address?: string;
 }): Promise<{ id: string; numeric_id?: number } | null> {
   const subtotal = params.items.reduce((sum, item) => sum + item.totalPrice, 0);
-  const total = subtotal + (params.deliveryType === "delivery" ? params.deliveryFee : 0);
+  const fee = params.deliveryType === "delivery" ? params.deliveryFee : 0;
+  const total = subtotal + fee;
 
-  const { data: order, error } = await supabase
+  // 1. Criar pedido de delivery
+  const { data: order, error: orderErr } = await supabase
     .from("delivery_orders")
     .insert({
       company_id: params.companyId,
@@ -145,7 +147,7 @@ export async function createDeliveryOrder(params: {
       delivery_type: params.deliveryType,
       items: params.items,
       subtotal,
-      delivery_fee: params.deliveryType === "delivery" ? params.deliveryFee : 0,
+      delivery_fee: fee,
       total,
       payment_method: params.paymentMethod,
       notes: params.notes ?? null,
@@ -154,12 +156,83 @@ export async function createDeliveryOrder(params: {
     .select()
     .single();
 
-  if (error || !order) {
-    console.error("Error creating delivery order:", error);
+  if (orderErr || !order) {
+    console.error("Error creating delivery order:", orderErr);
     return null;
   }
 
+  // 2. Criar venda financeira vinculada
+  const saleNotes = [
+    params.notes,
+    `Cliente: ${params.customerName}`,
+    `Tel: ${params.customerPhone}`,
+    params.deliveryType === "delivery"
+      ? `Endereço: ${params.address}`
+      : "Retirada na loja",
+    `Pedido #${order.numeric_id}`,
+  ].filter(Boolean).join(" | ");
+
+  const { data: sale } = await supabase
+    .from("sales")
+    .insert({
+      company_id: params.companyId,
+      subtotal,
+      discount_amount: 0,
+      total,
+      payment_method: params.paymentMethod,
+      payment_amount: total,
+      change_amount: 0,
+      notes: saleNotes,
+      status: "pending",
+    })
+    .select()
+    .single();
+
+  if (sale) {
+    // 3. Criar itens da venda
+    const saleItems = params.items.map((item) => ({
+      sale_id: sale.id,
+      product_id: item.productId ?? null,
+      product_name: item.name,
+      quantity: item.quantity,
+      unit_price: item.price,
+      discount_amount: 0,
+      subtotal: item.totalPrice,
+      addons: item.selectedAddons ?? [],
+      notes: null,
+    }));
+    await supabase.from("sale_items").insert(saleItems);
+
+    // 4. Criar movimentações de estoque (baixa)
+    const movements = params.items
+      .filter((item) => item.productId)
+      .map((item) => ({
+        company_id: params.companyId,
+        product_id: item.productId,
+        kind: "sale",
+        quantity: item.weight ?? item.quantity,
+        reference: `Pedido #${order.numeric_id}`,
+        notes: `Venda delivery — ${item.name}`,
+      }));
+    if (movements.length > 0) {
+      const { error: movErr } = await supabase.from("stock_movements").insert(movements);
+      if (movErr) console.error("Error creating stock movements:", movErr);
+    }
+  }
+
   return { id: order.id, numeric_id: order.numeric_id };
+}
+
+export async function getDeliveryOrderById(
+  orderId: string
+): Promise<import("../types").DeliveryOrder | null> {
+  const { data, error } = await supabase
+    .from("delivery_orders")
+    .select("*")
+    .eq("id", orderId)
+    .single();
+  if (error || !data) return null;
+  return data as import("../types").DeliveryOrder;
 }
 
 export async function sendWhatsAppOrder(
