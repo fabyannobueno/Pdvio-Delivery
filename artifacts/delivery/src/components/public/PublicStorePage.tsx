@@ -356,7 +356,7 @@ export const PublicStorePage = () => {
                     </button>
                     <div
                       ref={el => { scrollRefs.current[cat] = el; }}
-                      className="flex gap-4 md:overflow-x-auto md:scroll-smooth md:pb-2 md:scrollbar-hide grid grid-cols-2 md:flex"
+                      className="grid grid-cols-2 gap-4 md:flex md:flex-row md:overflow-x-auto md:scroll-smooth md:pb-2 md:scrollbar-hide"
                     >
                       {prods.map(product => {
                         const price = getEffectivePrice(product);
