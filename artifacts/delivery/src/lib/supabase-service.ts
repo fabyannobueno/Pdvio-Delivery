@@ -132,64 +132,34 @@ export async function createDeliveryOrder(params: {
   customerPhone: string;
   address?: string;
 }): Promise<{ id: string; numeric_id?: number } | null> {
-  const itemsSubtotal = params.items.reduce(
-    (sum, item) => sum + item.totalPrice,
-    0
-  );
-  const total = itemsSubtotal + (params.deliveryType === "delivery" ? params.deliveryFee : 0);
+  const subtotal = params.items.reduce((sum, item) => sum + item.totalPrice, 0);
+  const total = subtotal + (params.deliveryType === "delivery" ? params.deliveryFee : 0);
 
-  const notes = [
-    params.notes,
-    `Cliente: ${params.customerName}`,
-    `Telefone: ${params.customerPhone}`,
-    params.deliveryType === "delivery"
-      ? `Endereço: ${params.address}`
-      : "Retirada na loja",
-  ]
-    .filter(Boolean)
-    .join(" | ");
-
-  const { data: sale, error: saleErr } = await supabase
-    .from("sales")
+  const { data: order, error } = await supabase
+    .from("delivery_orders")
     .insert({
       company_id: params.companyId,
-      subtotal: itemsSubtotal,
-      discount_amount: 0,
+      customer_name: params.customerName,
+      customer_phone: params.customerPhone,
+      address: params.address ?? null,
+      delivery_type: params.deliveryType,
+      items: params.items,
+      subtotal,
+      delivery_fee: params.deliveryType === "delivery" ? params.deliveryFee : 0,
       total,
       payment_method: params.paymentMethod,
-      payment_amount: total,
-      change_amount: 0,
-      notes,
-      status: "completed",
+      notes: params.notes ?? null,
+      status: "pending",
     })
     .select()
     .single();
 
-  if (saleErr || !sale) {
-    console.error("Error creating sale:", saleErr);
+  if (error || !order) {
+    console.error("Error creating delivery order:", error);
     return null;
   }
 
-  const saleItems = params.items.map((item) => ({
-    sale_id: sale.id,
-    product_name: item.name,
-    quantity: item.quantity,
-    unit_price: item.price,
-    discount_amount: 0,
-    subtotal: item.totalPrice,
-    addons: item.selectedAddons ?? [],
-    notes: null,
-  }));
-
-  const { error: itemsErr } = await supabase
-    .from("sale_items")
-    .insert(saleItems);
-
-  if (itemsErr) {
-    console.error("Error creating sale items:", itemsErr);
-  }
-
-  return { id: sale.id, numeric_id: sale.numeric_id };
+  return { id: order.id, numeric_id: order.numeric_id };
 }
 
 export async function sendWhatsAppOrder(

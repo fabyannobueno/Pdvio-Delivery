@@ -110,3 +110,29 @@ export type PaymentMethod =
   | "credit_card"
   | "debit_card"
   | "ticket";
+
+export type DeliveryOrderStatus =
+  | "pending"
+  | "confirmed"
+  | "preparing"
+  | "out_for_delivery"
+  | "delivered"
+  | "cancelled";
+
+export interface DeliveryOrder {
+  id: string;
+  numeric_id?: number;
+  company_id: string;
+  customer_name: string;
+  customer_phone: string;
+  address?: string;
+  delivery_type: "delivery" | "pickup";
+  items: CartItem[];
+  subtotal: number;
+  delivery_fee: number;
+  total: number;
+  payment_method: string;
+  notes?: string;
+  status: DeliveryOrderStatus;
+  created_at: string;
+}
