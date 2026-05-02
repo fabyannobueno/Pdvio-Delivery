@@ -78,6 +78,21 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company }: Check
     if (numbers.length === 8) searchCep(numbers);
   };
 
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const numbers = e.target.value.replace(/\D/g, "").slice(0, 11);
+    let formatted = numbers;
+    if (numbers.length > 10) {
+      formatted = numbers.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
+    } else if (numbers.length > 6) {
+      formatted = numbers.replace(/(\d{2})(\d{4,5})(\d{0,4})/, "($1) $2-$3");
+    } else if (numbers.length > 2) {
+      formatted = numbers.replace(/(\d{2})(\d+)/, "($1) $2");
+    } else if (numbers.length > 0) {
+      formatted = `(${numbers}`;
+    }
+    setCustomerData(prev => ({ ...prev, phone: formatted }));
+  };
+
   const buildAddress = () => {
     const parts = [customerData.street, customerData.number, customerData.neighborhood, customerData.city, customerData.state].filter(Boolean);
     return parts.join(", ");
@@ -216,7 +231,7 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company }: Check
               </div>
               <div>
                 <Label htmlFor="phone">Telefone / WhatsApp *</Label>
-                <Input id="phone" placeholder="(11) 99999-9999" type="tel" value={customerData.phone} onChange={e => setCustomerData(p => ({ ...p, phone: e.target.value }))} />
+                <Input id="phone" placeholder="(11) 99999-9999" type="tel" value={customerData.phone} onChange={handlePhoneChange} />
               </div>
             </div>
           </div>
