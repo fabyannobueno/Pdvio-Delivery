@@ -112,12 +112,17 @@ export type PaymentMethod =
   | "ticket";
 
 export type DeliveryOrderStatus =
+  // comum
   | "pending"
   | "confirmed"
   | "preparing"
+  | "cancelled"
+  // entrega
   | "out_for_delivery"
   | "delivered"
-  | "cancelled";
+  // retirada
+  | "ready_for_pickup"
+  | "picked_up";
 
 export interface DeliveryOrder {
   id: string;
