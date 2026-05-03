@@ -84,7 +84,8 @@ export interface Sale {
   total: number;
   payment_method: string;
   payment_amount: number;
-  change_amount: number;
+  change_for?: number | null;
+  change_amount?: number | null;
   notes?: string;
   status: string;
   created_at: string;

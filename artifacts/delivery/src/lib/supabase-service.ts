@@ -127,6 +127,8 @@ export async function createDeliveryOrder(params: {
   customerPhone: string;
   address?: string;
   tableIdentifier?: string;
+  changeFor?: number;
+  changeAmount?: number;
 }): Promise<{ id: string; numeric_id?: number } | null> {
   const subtotal = params.items.reduce((sum, item) => sum + item.totalPrice, 0);
   const fee = params.deliveryType === "delivery" ? params.deliveryFee : 0;
