@@ -69,8 +69,11 @@ export const DesktopSidebar = ({ company, cartItemCount, onShowCart, onShowOrder
                 {customer ? (
                   <>
                     <button type="button" onClick={onShowProfile} className="w-full flex items-center gap-2 px-3 py-2 rounded-md bg-muted/50 hover:bg-muted transition-colors group text-left">
-                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                        <User className="w-3.5 h-3.5 text-primary" />
+                      <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0 overflow-hidden">
+                        {customer.avatar_url
+                          ? <img src={customer.avatar_url} alt={customer.name} className="w-full h-full object-cover" />
+                          : <User className="w-3.5 h-3.5 text-primary" />
+                        }
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-xs font-medium truncate">{customer.name}</p>

@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { X, Loader2, CheckCircle, User } from "lucide-react";
+import { X, Loader2, CheckCircle, User, Camera, Trash2 } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { Company, CustomerSession } from "@/types";
 
@@ -23,6 +23,31 @@ function maskPhone(value: string): string {
   return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
 }
 
+function resizeImageToBase64(file: File, maxSize = 500): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      URL.revokeObjectURL(url);
+      const canvas = document.createElement("canvas");
+      let { width, height } = img;
+      if (width > height) {
+        if (width > maxSize) { height = Math.round((height * maxSize) / width); width = maxSize; }
+      } else {
+        if (height > maxSize) { width = Math.round((width * maxSize) / height); height = maxSize; }
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) { reject(new Error("canvas context")); return; }
+      ctx.drawImage(img, 0, 0, width, height);
+      resolve(canvas.toDataURL("image/jpeg", 0.85));
+    };
+    img.onerror = reject;
+    img.src = url;
+  });
+}
+
 export const CustomerProfileModal = ({ isOpen, onClose, company, session, onUpdated }: CustomerProfileModalProps) => {
   const primaryColor = company.delivery_primary_color || "#6d28d9";
   const [closeHovered, setCloseHovered] = useState(false);
@@ -33,16 +58,41 @@ export const CustomerProfileModal = ({ isOpen, onClose, company, session, onUpda
   const [name, setName] = useState(session.name);
   const [phone, setPhone] = useState(session.phone || "");
   const [email, setEmail] = useState(session.email || "");
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(session.avatar_url || null);
+  const [avatarBase64, setAvatarBase64] = useState<string | null | undefined>(undefined);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (isOpen) {
       setName(session.name);
       setPhone(session.phone || "");
       setEmail(session.email || "");
+      setAvatarPreview(session.avatar_url || null);
+      setAvatarBase64(undefined);
       setError("");
       setSuccess(false);
     }
   }, [isOpen, session]);
+
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!file.type.startsWith("image/")) { setError("Selecione uma imagem válida."); return; }
+    try {
+      const base64 = await resizeImageToBase64(file, 500);
+      setAvatarPreview(base64);
+      setAvatarBase64(base64);
+      setError("");
+    } catch {
+      setError("Erro ao processar imagem.");
+    }
+    e.target.value = "";
+  };
+
+  const handleRemoveAvatar = () => {
+    setAvatarPreview(null);
+    setAvatarBase64(null);
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -52,21 +102,35 @@ export const CustomerProfileModal = ({ isOpen, onClose, company, session, onUpda
     setLoading(true);
     const emailChanged = (email.toLowerCase().trim() || null) !== (session.email?.toLowerCase().trim() || null);
 
+    const updatePayload: Record<string, unknown> = {
+      name: name.trim(),
+      phone: phone ? phone.trim() : null,
+      email: email ? email.toLowerCase().trim() : null,
+      ...(emailChanged ? { email_verified: false } : {}),
+    };
+
+    if (avatarBase64 !== undefined) {
+      updatePayload.avatar_url = avatarBase64;
+    }
+
     const { error: err } = await supabase
       .from("customers")
-      .update({
-        name: name.trim(),
-        phone: phone ? phone.trim() : null,
-        email: email ? email.toLowerCase().trim() : null,
-        ...(emailChanged ? { email_verified: false } : {}),
-      })
+      .update(updatePayload)
       .eq("id", session.id);
     setLoading(false);
 
     if (err) { setError("Erro ao salvar. Tente novamente."); return; }
 
+    const newAvatar = avatarBase64 !== undefined ? (avatarBase64 ?? undefined) : session.avatar_url;
+
     setSuccess(true);
-    onUpdated({ ...session, name: name.trim(), phone: phone.trim() || undefined, email: email.trim() || undefined });
+    onUpdated({
+      ...session,
+      name: name.trim(),
+      phone: phone.trim() || undefined,
+      email: email.trim() || undefined,
+      avatar_url: newAvatar,
+    });
     setTimeout(() => { setSuccess(false); onClose(); }, 1200);
   };
 
@@ -96,6 +160,50 @@ export const CustomerProfileModal = ({ isOpen, onClose, company, session, onUpda
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
+
+            {/* Avatar */}
+            <div className="flex flex-col items-center gap-2">
+              <div className="relative group">
+                <div
+                  className="w-20 h-20 rounded-full overflow-hidden border-2 flex items-center justify-center bg-muted cursor-pointer"
+                  style={{ borderColor: primaryColor }}
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  {avatarPreview ? (
+                    <img src={avatarPreview} alt="Avatar" className="w-full h-full object-cover" />
+                  ) : (
+                    <User className="w-9 h-9 text-muted-foreground" />
+                  )}
+                  <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                    <Camera className="w-5 h-5 text-white" />
+                  </div>
+                </div>
+                {avatarPreview && (
+                  <button
+                    type="button"
+                    onClick={handleRemoveAvatar}
+                    className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-destructive text-white flex items-center justify-center hover:opacity-80"
+                  >
+                    <Trash2 className="w-3 h-3" />
+                  </button>
+                )}
+              </div>
+              <button
+                type="button"
+                className="text-xs text-muted-foreground hover:text-foreground transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+              >
+                Alterar foto
+              </button>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={handleFileChange}
+              />
+            </div>
+
             <div className="space-y-1">
               <Label htmlFor="profile-name">Nome</Label>
               <Input id="profile-name" placeholder="Seu nome" value={name} onChange={e => setName(e.target.value)} />

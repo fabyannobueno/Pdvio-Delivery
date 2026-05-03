@@ -18,6 +18,7 @@ export interface Customer {
   address_neighborhood?: string;
   address_city?: string;
   address_state?: string;
+  avatar_url?: string;
 }
 
 export interface CustomerSession {
@@ -33,6 +34,7 @@ export interface CustomerSession {
   address_neighborhood?: string;
   address_city?: string;
   address_state?: string;
+  avatar_url?: string;
 }
 
 export interface OperatingHour {
