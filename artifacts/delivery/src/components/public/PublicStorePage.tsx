@@ -614,6 +614,7 @@ export const PublicStorePage = () => {
             isOpen={showProductModal}
             onClose={() => { setShowProductModal(false); setSelectedProduct(null); }}
             product={selectedProduct}
+            cartQuantity={cart.filter(i => i.productId === selectedProduct.id).reduce((s, i) => s + i.quantity, 0)}
             onAddToCart={(qty, addons, w) => addToCart(selectedProduct, qty, addons, w)}
             isStoreOpen={storeOpen}
             primaryColor={company?.delivery_primary_color || "#6d28d9"}

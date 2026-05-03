@@ -26,8 +26,8 @@ export const ShoppingCart = ({ isOpen, onClose, cart, setCart, company, onChecko
       const item = cart.find(i => i.productId === productId && JSON.stringify(i.selectedAddons) === JSON.stringify(addons));
       if (item && item.stockQuantity !== undefined && item.stockQuantity !== null) {
         const totalInCart = cart.filter(i => i.productId === productId).reduce((s, i) => s + i.quantity, 0);
-        if (totalInCart + change > item.stockQuantity) {
-          toast({ title: "Estoque insuficiente", description: `Máximo disponível: ${item.stockQuantity} ${item.unit}`, variant: "destructive" });
+        if (totalInCart + change > Number(item.stockQuantity)) {
+          toast({ title: "Estoque insuficiente", description: `Máximo disponível: ${Number(item.stockQuantity)} ${item.unit}`, variant: "destructive" });
           return;
         }
       }

@@ -30,9 +30,10 @@ interface ProductDetailModalProps {
   onAddToCart: (quantity: number, selectedAddons: ProductAddon[], weight?: number) => void;
   isStoreOpen: boolean;
   primaryColor?: string;
+  cartQuantity?: number;
 }
 
-export const ProductDetailModal = ({ isOpen, onClose, product, onAddToCart, isStoreOpen, primaryColor = "#6d28d9" }: ProductDetailModalProps) => {
+export const ProductDetailModal = ({ isOpen, onClose, product, onAddToCart, isStoreOpen, primaryColor = "#6d28d9", cartQuantity = 0 }: ProductDetailModalProps) => {
   const [quantity, setQuantity] = useState(1);
   const [selectedAddons, setSelectedAddons] = useState<ProductAddon[]>([]);
   const [closeHovered, setCloseHovered] = useState(false);
@@ -156,7 +157,7 @@ export const ProductDetailModal = ({ isOpen, onClose, product, onAddToCart, isSt
               <div className="flex items-center space-x-4">
                 <PrimaryIconBtn primaryColor={primaryColor} onClick={() => setQuantity(Math.max(1, quantity - 1))} disabled={quantity <= 1}><Minus className="w-4 h-4" /></PrimaryIconBtn>
                 <span className="text-lg font-medium min-w-[40px] text-center">{quantity}</span>
-                <PrimaryIconBtn primaryColor={primaryColor} onClick={() => setQuantity(quantity + 1)}><Plus className="w-4 h-4" /></PrimaryIconBtn>
+                <PrimaryIconBtn primaryColor={primaryColor} onClick={() => setQuantity(quantity + 1)} disabled={product.stock_quantity !== undefined && product.stock_quantity !== null && (cartQuantity + quantity) >= Number(product.stock_quantity)}><Plus className="w-4 h-4" /></PrimaryIconBtn>
               </div>
             </div>
           )}
