@@ -1,10 +1,11 @@
 import { useState } from "react";
+import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Package, Search, Phone, X } from "lucide-react";
+import { Loader2, Package, Search, Phone, X, ChevronRight } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { Company, DeliveryOrder } from "@/types";
 
@@ -32,6 +33,7 @@ export const MyOrdersModal = ({ isOpen, onClose, company }: MyOrdersModalProps) 
   const [searched, setSearched] = useState(false);
   const [closeHovered, setCloseHovered] = useState(false);
   const primaryColor = company.delivery_primary_color || "#6d28d9";
+  const [, navigate] = useLocation();
 
   const formatPhone = (value: string) => {
     const n = value.replace(/\D/g, "").slice(0, 11);
@@ -138,7 +140,14 @@ export const MyOrdersModal = ({ isOpen, onClose, company }: MyOrdersModalProps) 
                   {orders.map(order => {
                     const status = STATUS_MAP[order.status] || { label: order.status, color: "bg-gray-500" };
                     return (
-                      <Card key={order.id}>
+                      <Card
+                        key={order.id}
+                        className="cursor-pointer hover:shadow-md transition-shadow"
+                        onClick={() => {
+                          handleClose();
+                          navigate(`/${company.delivery_slug}/pedido/${order.id}`);
+                        }}
+                      >
                         <CardContent className="p-4">
                           <div className="flex items-start justify-between mb-3">
                             <div>
@@ -147,9 +156,12 @@ export const MyOrdersModal = ({ isOpen, onClose, company }: MyOrdersModalProps) 
                               </h3>
                               <p className="text-sm text-muted-foreground">{formatDate(order.created_at)}</p>
                             </div>
-                            <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white ${status.color}`}>
-                              {status.label}
-                            </span>
+                            <div className="flex items-center gap-2">
+                              <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium text-white ${status.color}`}>
+                                {status.label}
+                              </span>
+                              <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                            </div>
                           </div>
 
                           <Separator className="my-3" />
@@ -158,7 +170,7 @@ export const MyOrdersModal = ({ isOpen, onClose, company }: MyOrdersModalProps) 
                             {order.items?.map((item, i) => (
                               <div key={i} className="flex justify-between text-sm">
                                 <span>{item.quantity}x {item.name}</span>
-                                <span>R$ {((item.price * item.quantity)).toFixed(2).replace(".", ",")}</span>
+                                <span>R$ {(item.price * item.quantity).toFixed(2).replace(".", ",")}</span>
                               </div>
                             ))}
                           </div>
