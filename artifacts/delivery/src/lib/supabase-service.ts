@@ -210,15 +210,11 @@ export async function createDeliveryOrder(params: {
   changeAmount?: number;
   comandaId?: string;
   promotionDiscount?: number;
-  couponId?: string;
   couponCode?: string;
-  couponDiscount?: number;
 }): Promise<{ id: string; numeric_id?: number } | null> {
   const subtotal = params.items.reduce((sum, item) => sum + item.totalPrice, 0);
   const fee = params.deliveryType === "delivery" ? params.deliveryFee : 0;
-  const promoDisc = params.promotionDiscount ?? 0;
-  const cpnDisc = params.couponDiscount ?? 0;
-  const totalDiscount = promoDisc + cpnDisc;
+  const totalDiscount = params.promotionDiscount ?? 0;
   const total = Math.max(0, subtotal + fee - totalDiscount);
 
   const { data: order, error: orderErr } = await supabase
@@ -234,9 +230,6 @@ export async function createDeliveryOrder(params: {
       subtotal,
       delivery_fee: fee,
       discount_amount: totalDiscount,
-      promotion_discount: promoDisc,
-      coupon_discount: cpnDisc,
-      coupon_id: params.couponId ?? null,
       coupon_code: params.couponCode ?? null,
       total,
       payment_method: params.paymentMethod,

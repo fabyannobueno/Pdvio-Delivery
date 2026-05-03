@@ -233,9 +233,7 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
         changeAmount: changeAmountVal,
         comandaId: mesaParams?.comanda,
         promotionDiscount: promotionDiscount > 0 ? promotionDiscount : undefined,
-        couponId: appliedCoupon?.id,
         couponCode: appliedCoupon?.code,
-        couponDiscount: couponDiscount > 0 ? couponDiscount : undefined,
       });
 
       if (!sale) throw new Error("Erro ao criar pedido");
