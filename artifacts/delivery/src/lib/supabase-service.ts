@@ -129,6 +129,7 @@ export async function createDeliveryOrder(params: {
   tableIdentifier?: string;
   changeFor?: number;
   changeAmount?: number;
+  comandaId?: string;
 }): Promise<{ id: string; numeric_id?: number } | null> {
   const subtotal = params.items.reduce((sum, item) => sum + item.totalPrice, 0);
   const fee = params.deliveryType === "delivery" ? params.deliveryFee : 0;
@@ -151,6 +152,7 @@ export async function createDeliveryOrder(params: {
       payment_method: params.paymentMethod,
       change_for: params.changeFor ?? null,
       change_amount: params.changeAmount ?? null,
+      comanda_id: params.comandaId ?? null,
       notes: params.notes ?? null,
       status: "pending",
     })

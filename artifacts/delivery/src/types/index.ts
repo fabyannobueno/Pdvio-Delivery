@@ -148,4 +148,5 @@ export interface DeliveryOrder {
 export interface MesaParams {
   mesa: string;
   empresa: string;
+  comanda?: string;
 }

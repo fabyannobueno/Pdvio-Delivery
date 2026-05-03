@@ -166,6 +166,7 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
         tableIdentifier,
         changeFor: changeForVal,
         changeAmount: changeAmountVal,
+        comandaId: mesaParams?.comanda,
       });
 
       if (!sale) throw new Error("Erro ao criar pedido");

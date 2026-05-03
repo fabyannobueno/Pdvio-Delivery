@@ -48,8 +48,9 @@ export const PublicStorePage = () => {
     const mesa = params.get("mesa");
     const empresa = params.get("empresa");
     const modo = params.get("modo");
+    const comanda = params.get("comanda") ?? undefined;
     if (modo === "mesa" && mesa && empresa) {
-      return { mesa, empresa };
+      return { mesa, empresa, comanda };
     }
     return undefined;
   })();
