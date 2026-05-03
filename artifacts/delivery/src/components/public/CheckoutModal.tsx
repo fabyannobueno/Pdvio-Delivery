@@ -150,6 +150,9 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
         : null;
       const fullNotes = [orderNotes, changeNote].filter(Boolean).join(" | ");
 
+      const changeForVal = selectedPayment === "cash" && needsChange ? parseChangeFor() : undefined;
+      const changeAmountVal = changeForVal ? parseFloat((changeForVal - total).toFixed(2)) : undefined;
+
       const sale = await createDeliveryOrder({
         companyId,
         items: cart,
@@ -161,6 +164,8 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
         customerPhone: customerData.phone,
         address,
         tableIdentifier,
+        changeFor: changeForVal,
+        changeAmount: changeAmountVal,
       });
 
       if (!sale) throw new Error("Erro ao criar pedido");

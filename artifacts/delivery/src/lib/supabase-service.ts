@@ -149,6 +149,8 @@ export async function createDeliveryOrder(params: {
       discount_amount: 0,
       total,
       payment_method: params.paymentMethod,
+      change_for: params.changeFor ?? null,
+      change_amount: params.changeAmount ?? null,
       notes: params.notes ?? null,
       status: "pending",
     })
