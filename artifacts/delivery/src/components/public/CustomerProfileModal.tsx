@@ -50,12 +50,15 @@ export const CustomerProfileModal = ({ isOpen, onClose, company, session, onUpda
     if (!name.trim() || name.trim().length < 2) { setError("Nome deve ter ao menos 2 caracteres."); return; }
 
     setLoading(true);
+    const emailChanged = (email.toLowerCase().trim() || null) !== (session.email?.toLowerCase().trim() || null);
+
     const { error: err } = await supabase
       .from("customers")
       .update({
         name: name.trim(),
         phone: phone ? phone.trim() : null,
         email: email ? email.toLowerCase().trim() : null,
+        ...(emailChanged ? { email_verified: false } : {}),
       })
       .eq("id", session.id);
     setLoading(false);
