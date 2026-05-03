@@ -271,10 +271,7 @@ export const OrderTrackingPage = () => {
               const active = idx === safeIdx;
               const pending = idx > safeIdx;
 
-              if (isDineIn && pending) return null;
-
-              const visibleCount = isDineIn ? safeIdx + 1 : steps.length;
-              const isLast = isDineIn ? idx === safeIdx : idx === steps.length - 1;
+              const isLast = idx === steps.length - 1;
 
               return (
                 <div key={step.key} className="flex gap-3">
