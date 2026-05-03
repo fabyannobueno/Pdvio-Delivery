@@ -649,7 +649,7 @@ export const PublicStorePage = () => {
       )}
       <ShoppingCart isOpen={showCart} onClose={() => setShowCart(false)} cart={cart} setCart={setCart} company={company} onCheckout={() => { setShowCart(false); if (!customer) { setPendingCheckout(true); setShowAuth(true); } else { setShowCheckout(true); } }} />
       <CheckoutModal isOpen={showCheckout} onClose={() => setShowCheckout(false)} cart={cart} setCart={setCart} company={company} mesaParams={mesaParams} customer={customer} />
-      <MyOrdersModal isOpen={showOrders} onClose={() => setShowOrders(false)} company={company} />
+      <MyOrdersModal isOpen={showOrders} onClose={() => setShowOrders(false)} company={company} customer={customer} />
       <StoreInfoModal isOpen={showStoreInfo} onClose={() => setShowStoreInfo(false)} company={company} />
       <CustomerAuthModal
         isOpen={showAuth} onClose={() => setShowAuth(false)} company={company}

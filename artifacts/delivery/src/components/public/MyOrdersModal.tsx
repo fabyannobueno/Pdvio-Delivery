@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,12 +7,13 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Loader2, Package, Search, Phone, X, ChevronRight, ChevronLeft } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import type { Company, DeliveryOrder } from "@/types";
+import type { Company, CustomerSession, DeliveryOrder } from "@/types";
 
 interface MyOrdersModalProps {
   isOpen: boolean;
   onClose: () => void;
   company: Company;
+  customer?: CustomerSession | null;
 }
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
@@ -28,7 +29,7 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
 
 const PAGE_SIZE = 2;
 
-export const MyOrdersModal = ({ isOpen, onClose, company }: MyOrdersModalProps) => {
+export const MyOrdersModal = ({ isOpen, onClose, company, customer }: MyOrdersModalProps) => {
   const [phone, setPhone] = useState("");
   const [orders, setOrders] = useState<DeliveryOrder[]>([]);
   const [loading, setLoading] = useState(false);
@@ -48,28 +49,20 @@ export const MyOrdersModal = ({ isOpen, onClose, company }: MyOrdersModalProps) 
     return n.replace(/(\d{2})(\d{5})(\d{1,4})/, "($1) $2-$3");
   };
 
-  const searchOrders = async () => {
-    if (!phone.trim()) return;
+  const doSearch = async (phoneValue: string) => {
+    if (!phoneValue.trim()) return;
     setLoading(true);
-
     try {
-      const cleanPhone = phone.replace(/\D/g, "");
-
+      const cleanPhone = phoneValue.replace(/\D/g, "");
       const { data, error } = await supabase
         .from("delivery_orders")
         .select("*")
         .eq("company_id", company.id)
-        .in("customer_phone", [phone, cleanPhone])
+        .in("customer_phone", [phoneValue, cleanPhone])
         .order("created_at", { ascending: false })
         .limit(20);
-
-      if (error) {
-        console.error("Error searching orders:", error);
-        setOrders([]);
-      } else {
-        setOrders((data || []) as DeliveryOrder[]);
-        setPage(1);
-      }
+      if (error) { console.error("Error searching orders:", error); setOrders([]); }
+      else { setOrders((data || []) as DeliveryOrder[]); setPage(1); }
     } catch (err) {
       console.error("Error:", err);
       setOrders([]);
@@ -78,6 +71,15 @@ export const MyOrdersModal = ({ isOpen, onClose, company }: MyOrdersModalProps) 
       setSearched(true);
     }
   };
+
+  const searchOrders = () => doSearch(phone);
+
+  useEffect(() => {
+    if (isOpen && customer?.phone) {
+      setPhone(formatPhone(customer.phone));
+      doSearch(customer.phone);
+    }
+  }, [isOpen]);
 
   const formatDate = (dateStr: string) => {
     const d = new Date(dateStr);
