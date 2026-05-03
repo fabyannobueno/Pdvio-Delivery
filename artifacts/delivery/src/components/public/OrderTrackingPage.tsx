@@ -168,7 +168,7 @@ export const OrderTrackingPage = () => {
         </Button>
         {company?.delivery_logo_url && (
           <img src={company.delivery_logo_url} alt={company.name}
-            className="w-8 h-8 rounded-full object-cover shrink-0" />
+            className="w-8 h-8 rounded-full object-cover shrink-0 bg-white" />
         )}
         <div className="min-w-0">
           <p className="font-semibold truncate">{company?.name ?? slug}</p>
