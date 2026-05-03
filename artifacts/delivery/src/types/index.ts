@@ -19,6 +19,7 @@ export interface Customer {
   address_city?: string;
   address_state?: string;
   avatar_url?: string;
+  delivery_signup?: boolean;
 }
 
 export interface CustomerSession {

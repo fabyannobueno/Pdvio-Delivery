@@ -597,6 +597,7 @@ export async function signupCustomer(params: {
       password_hash,
       email_verified: !hasEmail,
       document: cpfDigits,
+      delivery_signup: true,
     })
     .select()
     .single();
