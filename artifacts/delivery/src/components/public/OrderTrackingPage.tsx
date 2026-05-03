@@ -363,69 +363,69 @@ export const OrderTrackingPage = () => {
           </div>
         )}
 
-      </div>
-
-      {/* Avaliação do pedido */}
-      {order && FINAL_STATUSES.includes(order.status) && !alreadyReviewed && (
-        <div className="rounded-xl border bg-card p-5 space-y-4 max-w-lg mx-auto w-full">
-          {reviewSubmitted ? (
-            <div className="flex flex-col items-center gap-2 py-2 text-center">
-              <CheckCircle2 className="w-10 h-10 text-primary" />
-              <p className="font-semibold text-base">Obrigado pela avaliação!</p>
-              <p className="text-sm text-muted-foreground">Seu feedback nos ajuda a melhorar.</p>
-            </div>
-          ) : (
-            <>
-              <div className="space-y-1">
-                <p className="font-semibold text-sm">Como foi a sua experiência?</p>
-                <p className="text-xs text-muted-foreground">Sua avaliação é importante para nós</p>
+        {/* Avaliação do pedido */}
+        {FINAL_STATUSES.includes(order.status) && !alreadyReviewed && (
+          <div className="rounded-xl border bg-card p-5 space-y-4">
+            {reviewSubmitted ? (
+              <div className="flex flex-col items-center gap-2 py-2 text-center">
+                <CheckCircle2 className="w-10 h-10 text-primary" />
+                <p className="font-semibold text-base">Obrigado pela avaliação!</p>
+                <p className="text-sm text-muted-foreground">Seu feedback nos ajuda a melhorar.</p>
               </div>
-              <div className="flex gap-1">
-                {[1, 2, 3, 4, 5].map((star) => (
-                  <button
-                    key={star}
-                    type="button"
-                    onClick={() => setReviewRating(star)}
-                    onMouseEnter={() => setReviewHover(star)}
-                    onMouseLeave={() => setReviewHover(0)}
-                    className="p-0.5 transition-transform hover:scale-110 focus:outline-none"
-                    aria-label={`${star} estrela${star > 1 ? "s" : ""}`}
-                  >
-                    <Star
-                      className={`w-8 h-8 transition-colors ${
-                        star <= (reviewHover || reviewRating)
-                          ? "fill-yellow-400 text-yellow-400"
-                          : "fill-muted text-muted-foreground"
-                      }`}
-                    />
-                  </button>
-                ))}
-              </div>
-              {reviewRating > 0 && (
-                <Textarea
-                  placeholder="Deixe um comentário (opcional)"
-                  value={reviewComment}
-                  onChange={(e) => setReviewComment(e.target.value)}
-                  rows={3}
-                  className="resize-none text-sm"
-                />
-              )}
-              <Button
-                onClick={handleSubmitReview}
-                disabled={reviewRating === 0 || reviewSubmitting}
-                className="w-full"
-                size="sm"
-              >
-                {reviewSubmitting ? (
-                  <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enviando...</>
-                ) : (
-                  "Enviar avaliação"
+            ) : (
+              <>
+                <div className="space-y-1">
+                  <p className="font-semibold text-sm">Como foi a sua experiência?</p>
+                  <p className="text-xs text-muted-foreground">Sua avaliação é importante para nós</p>
+                </div>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <button
+                      key={star}
+                      type="button"
+                      onClick={() => setReviewRating(star)}
+                      onMouseEnter={() => setReviewHover(star)}
+                      onMouseLeave={() => setReviewHover(0)}
+                      className="p-0.5 transition-transform hover:scale-110 focus:outline-none"
+                      aria-label={`${star} estrela${star > 1 ? "s" : ""}`}
+                    >
+                      <Star
+                        className={`w-8 h-8 transition-colors ${
+                          star <= (reviewHover || reviewRating)
+                            ? "fill-yellow-400 text-yellow-400"
+                            : "fill-muted text-muted-foreground"
+                        }`}
+                      />
+                    </button>
+                  ))}
+                </div>
+                {reviewRating > 0 && (
+                  <Textarea
+                    placeholder="Deixe um comentário (opcional)"
+                    value={reviewComment}
+                    onChange={(e) => setReviewComment(e.target.value)}
+                    rows={3}
+                    className="resize-none text-sm"
+                  />
                 )}
-              </Button>
-            </>
-          )}
-        </div>
-      )}
+                <Button
+                  onClick={handleSubmitReview}
+                  disabled={reviewRating === 0 || reviewSubmitting}
+                  className="w-full"
+                  size="sm"
+                >
+                  {reviewSubmitting ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> Enviando...</>
+                  ) : (
+                    "Enviar avaliação"
+                  )}
+                </Button>
+              </>
+            )}
+          </div>
+        )}
+
+      </div>
 
       {/* Footer */}
       <footer className="border-t mt-4 py-6 flex flex-col items-center gap-2">
