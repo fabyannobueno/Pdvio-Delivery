@@ -358,13 +358,26 @@ export const OrderTrackingPage = () => {
           </div>
         </div>
 
-        {/* Endereço */}
+        {/* Endereço de entrega */}
         {order.delivery_type === "delivery" && order.address && (
           <div className="rounded-xl border bg-card p-4 space-y-1">
             <p className="font-semibold text-sm flex items-center gap-2">
               <MapPin className="w-4 h-4 text-primary" /> Endereço de entrega
             </p>
             <p className="text-sm text-muted-foreground">{order.address}</p>
+          </div>
+        )}
+
+        {/* Endereço da loja — retirada */}
+        {order.delivery_type === "pickup" && company?.address && (
+          <div className="rounded-xl border bg-card p-4 space-y-1">
+            <p className="font-semibold text-sm flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-primary" /> Retire seu pedido em
+            </p>
+            <p className="text-sm text-muted-foreground">{company.address}</p>
+            {company.phone && (
+              <p className="text-sm text-muted-foreground">{company.phone}</p>
+            )}
           </div>
         )}
 
