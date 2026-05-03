@@ -218,17 +218,11 @@ export async function createDeliveryOrder(params: {
 
     for (const item of stockItems) {
       const qty = item.weight ?? item.quantity;
-      const { data: prod } = await supabase
-        .from("products")
-        .select("stock_quantity")
-        .eq("id", item.productId)
-        .single();
-      if (prod?.stock_quantity != null) {
-        await supabase
-          .from("products")
-          .update({ stock_quantity: prod.stock_quantity - qty })
-          .eq("id", item.productId);
-      }
+      const { error } = await supabase.rpc("decrement_product_stock", {
+        p_product_id: item.productId,
+        p_qty: qty,
+      });
+      if (error) console.error("decrement_product_stock error:", error.message);
     }
   }
 
@@ -257,17 +251,11 @@ export async function restoreOrderStock(params: {
 
   for (const item of stockItems) {
     const qty = item.weight ?? item.quantity;
-    const { data: prod } = await supabase
-      .from("products")
-      .select("stock_quantity")
-      .eq("id", item.productId)
-      .single();
-    if (prod?.stock_quantity != null) {
-      await supabase
-        .from("products")
-        .update({ stock_quantity: prod.stock_quantity + qty })
-        .eq("id", item.productId);
-    }
+    const { error } = await supabase.rpc("restore_product_stock", {
+      p_product_id: item.productId,
+      p_qty: qty,
+    });
+    if (error) console.error("restore_product_stock error:", error.message);
   }
 }
 
