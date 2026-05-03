@@ -202,10 +202,7 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
           trackingUrl,
         });
 
-        if (company.delivery_whatsapp) {
-          const storeWhatsApp = company.delivery_whatsapp.replace(/\D/g, "");
-          window.open(`https://wa.me/${storeWhatsApp}?text=${encodeURIComponent(message)}`, "_blank");
-        } else if (company.wapi_instance_id) {
+        if (company.wapi_instance_id) {
           await sendWhatsAppOrder(company, message, customerData.phone);
         }
       }
