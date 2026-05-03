@@ -74,6 +74,7 @@ export interface CartItem {
   imageUrl?: string;
   unit: string;
   weight?: number;
+  stockQuantity?: number;
 }
 
 export interface Sale {

@@ -222,6 +222,7 @@ export const PublicStorePage = () => {
       imageUrl: product.image_url,
       unit: product.stock_unit,
       weight,
+      stockQuantity: product.stock_quantity,
     };
 
     setCart(prev => {

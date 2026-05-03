@@ -5,6 +5,7 @@ import { Separator } from "@/components/ui/separator";
 import { X, Plus, Minus, ShoppingBag } from "lucide-react";
 import type { Company, CartItem } from "@/types";
 import { formatCurrency } from "@/lib/supabase-service";
+import { useToast } from "@/hooks/use-toast";
 
 interface ShoppingCartProps {
   isOpen: boolean;
@@ -18,7 +19,19 @@ interface ShoppingCartProps {
 export const ShoppingCart = ({ isOpen, onClose, cart, setCart, company, onCheckout }: ShoppingCartProps) => {
   const [closeHovered, setCloseHovered] = useState(false);
   const primaryColor = company.delivery_primary_color || "#6d28d9";
+  const { toast } = useToast();
+
   const updateQuantity = (productId: string, addons: CartItem["selectedAddons"], change: number) => {
+    if (change > 0) {
+      const item = cart.find(i => i.productId === productId && JSON.stringify(i.selectedAddons) === JSON.stringify(addons));
+      if (item && item.stockQuantity !== undefined && item.stockQuantity !== null) {
+        const totalInCart = cart.filter(i => i.productId === productId).reduce((s, i) => s + i.quantity, 0);
+        if (totalInCart + change > item.stockQuantity) {
+          toast({ title: "Estoque insuficiente", description: `Máximo disponível: ${item.stockQuantity} ${item.unit}`, variant: "destructive" });
+          return;
+        }
+      }
+    }
     setCart(
       cart
         .map(item => {
@@ -36,6 +49,16 @@ export const ShoppingCart = ({ isOpen, onClose, cart, setCart, company, onChecko
   };
 
   const updateWeight = (productId: string, addons: CartItem["selectedAddons"], change: number) => {
+    if (change > 0) {
+      const item = cart.find(i => i.productId === productId && JSON.stringify(i.selectedAddons) === JSON.stringify(addons));
+      if (item && item.stockQuantity !== undefined && item.stockQuantity !== null) {
+        const newWeight = Math.max(0.1, (item.weight || 0.5) + change);
+        if (newWeight * item.quantity > item.stockQuantity) {
+          toast({ title: "Estoque insuficiente", description: `Máximo disponível: ${item.stockQuantity.toFixed(3).replace(".", ",")} ${item.unit}`, variant: "destructive" });
+          return;
+        }
+      }
+    }
     setCart(cart.map(item => {
       if (item.productId === productId && JSON.stringify(item.selectedAddons) === JSON.stringify(addons)) {
         const newWeight = Math.max(0.1, (item.weight || 0.5) + change);
