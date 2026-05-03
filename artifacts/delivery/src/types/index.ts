@@ -145,6 +145,19 @@ export interface DeliveryOrder {
   created_at: string;
 }
 
+export interface OrderReview {
+  id: string;
+  company_id: string;
+  order_id?: string;
+  order_numeric_id?: number;
+  customer_name?: string;
+  delivery_type?: string;
+  table_identifier?: string;
+  rating: number;
+  comment?: string;
+  created_at: string;
+}
+
 export interface MesaParams {
   mesa: string;
   empresa: string;

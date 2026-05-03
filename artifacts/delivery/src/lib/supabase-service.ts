@@ -425,6 +425,39 @@ export function applyThemeColor(primaryColor: string): void {
   document.documentElement.style.setProperty("--ring", hsl);
 }
 
+export async function getOrderReview(orderId: string): Promise<boolean> {
+  const { data } = await supabase
+    .from("order_reviews")
+    .select("id")
+    .eq("order_id", orderId)
+    .maybeSingle();
+  return !!data;
+}
+
+export async function submitOrderReview(params: {
+  companyId: string;
+  orderId: string;
+  orderNumericId?: number;
+  customerName?: string;
+  deliveryType?: string;
+  tableIdentifier?: string;
+  rating: number;
+  comment?: string;
+}): Promise<boolean> {
+  const { error } = await supabase.from("order_reviews").insert({
+    company_id: params.companyId,
+    order_id: params.orderId,
+    order_numeric_id: params.orderNumericId ?? null,
+    customer_name: params.customerName ?? null,
+    delivery_type: params.deliveryType ?? null,
+    table_identifier: params.tableIdentifier ?? null,
+    rating: params.rating,
+    comment: params.comment?.trim() || null,
+  });
+  if (error) { console.error("Error submitting review:", error); return false; }
+  return true;
+}
+
 export function formatCurrency(value: number): string {
   return `R$ ${value.toFixed(2).replace(".", ",")}`;
 }
