@@ -75,7 +75,7 @@ export const CustomerAuthModal = ({ isOpen, onClose, company, onAuthenticated }:
     }
     if (!result.customer) { setError("Identificador ou senha incorretos."); return; }
     const c = result.customer;
-    onAuthenticated({ id: c.id, name: c.name, email: c.email, phone: c.phone, companyId: company.id });
+    onAuthenticated({ id: c.id, name: c.name, email: c.email, phone: c.phone, companyId: company.id, address_cep: c.address_cep, address_street: c.address_street, address_number: c.address_number, address_complement: c.address_complement, address_neighborhood: c.address_neighborhood, address_city: c.address_city, address_state: c.address_state });
   };
 
   const handleResendVerification = async () => {
@@ -129,7 +129,7 @@ export const CustomerAuthModal = ({ isOpen, onClose, company, onAuthenticated }:
     }
 
     setLoading(false);
-    onAuthenticated({ id: customer.id, name: customer.name, email: customer.email, phone: customer.phone, companyId: company.id });
+    onAuthenticated({ id: customer.id, name: customer.name, email: customer.email, phone: customer.phone, companyId: company.id, address_cep: customer.address_cep, address_street: customer.address_street, address_number: customer.address_number, address_complement: customer.address_complement, address_neighborhood: customer.address_neighborhood, address_city: customer.address_city, address_state: customer.address_state });
   };
 
   const handleForgot = async (e: React.FormEvent) => {

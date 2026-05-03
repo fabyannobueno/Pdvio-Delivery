@@ -10,7 +10,7 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { X, Truck, Home, UtensilsCrossed, CreditCard, Smartphone, DollarSign, Receipt, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { createDeliveryOrder, sendWhatsAppOrder, generateOrderWhatsAppMessage, formatCurrency } from "@/lib/supabase-service";
+import { createDeliveryOrder, sendWhatsAppOrder, generateOrderWhatsAppMessage, formatCurrency, updateCustomerAddress } from "@/lib/supabase-service";
 import type { Company, CartItem, PaymentMethod, DeliveryType, MesaParams } from "@/types";
 
 interface CheckoutModalProps {
@@ -20,6 +20,7 @@ interface CheckoutModalProps {
   setCart: (cart: CartItem[]) => void;
   company: Company;
   mesaParams?: MesaParams;
+  customer?: { name: string; phone?: string | null; email?: string | null } | null;
 }
 
 const PAYMENT_METHODS = [
@@ -30,7 +31,7 @@ const PAYMENT_METHODS = [
   { id: "ticket" as PaymentMethod, name: "Vale Refeição", icon: Receipt, description: "VR, VA, Sodexo, etc." },
 ];
 
-export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaParams }: CheckoutModalProps) => {
+export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaParams, customer }: CheckoutModalProps) => {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const primaryColor = company.delivery_primary_color || "#6d28d9";
@@ -40,7 +41,7 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
   const initialDeliveryType: DeliveryType = isMesaMode ? "dine_in" : "delivery";
 
   const [deliveryType, setDeliveryType] = useState<DeliveryType>(initialDeliveryType);
-  const [customerData, setCustomerData] = useState({ name: "", phone: "", cep: "", street: "", number: "", neighborhood: "", city: "", state: "" });
+  const [customerData, setCustomerData] = useState({ name: "", phone: "", cep: "", street: "", number: "", complement: "", neighborhood: "", city: "", state: "" });
   const [orderNotes, setOrderNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const availablePayments = PAYMENT_METHODS.filter(pm =>
@@ -57,10 +58,19 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
 
   useEffect(() => {
     const saved = localStorage.getItem(`customer_${company.id}`);
-    if (saved) {
-      try { setCustomerData(JSON.parse(saved)); } catch {}
-    }
-  }, [company.id]);
+    let base = { name: "", phone: "", cep: "", street: "", number: "", complement: "", neighborhood: "", city: "", state: "" };
+    if (saved) { try { base = { ...base, ...JSON.parse(saved) }; } catch {} }
+    if (customer?.name) base.name = customer.name;
+    if (customer?.phone) base.phone = customer.phone;
+    if (customer?.address_cep) base.cep = customer.address_cep;
+    if (customer?.address_street) base.street = customer.address_street;
+    if (customer?.address_number) base.number = customer.address_number;
+    if (customer?.address_complement) base.complement = customer.address_complement;
+    if (customer?.address_neighborhood) base.neighborhood = customer.address_neighborhood;
+    if (customer?.address_city) base.city = customer.address_city;
+    if (customer?.address_state) base.state = customer.address_state;
+    setCustomerData(base);
+  }, [company.id, customer, isOpen]);
 
   useEffect(() => {
     if (customerData.name || customerData.phone) {
@@ -123,7 +133,7 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
   };
 
   const buildAddress = () => {
-    const parts = [customerData.street, customerData.number, customerData.neighborhood, customerData.city, customerData.state].filter(Boolean);
+    const parts = [customerData.street, customerData.number, customerData.complement, customerData.neighborhood, customerData.city, customerData.state].filter(Boolean);
     return parts.join(", ");
   };
 
@@ -198,6 +208,10 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
         } else if (company.wapi_instance_id) {
           await sendWhatsAppOrder(company, message, customerData.phone);
         }
+      }
+
+      if (customer?.id && deliveryType === "delivery") {
+        updateCustomerAddress(customer.id, { cep: customerData.cep, street: customerData.street, number: customerData.number, complement: customerData.complement, neighborhood: customerData.neighborhood, city: customerData.city, state: customerData.state });
       }
 
       setCart([]);
@@ -305,6 +319,10 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
                   <Label htmlFor="number">Número *</Label>
                   <Input id="number" placeholder="123" value={customerData.number} onChange={e => setCustomerData(p => ({ ...p, number: e.target.value }))} />
                 </div>
+              </div>
+              <div>
+                <Label htmlFor="complement">Complemento</Label>
+                <Input id="complement" placeholder="Apto, bloco, casa..." value={customerData.complement} onChange={e => setCustomerData(p => ({ ...p, complement: e.target.value }))} />
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div>

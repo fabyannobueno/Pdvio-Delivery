@@ -11,6 +11,13 @@ export interface Customer {
   credit_limit?: number;
   password_hash?: string;
   email_verified?: boolean;
+  address_cep?: string;
+  address_street?: string;
+  address_number?: string;
+  address_complement?: string;
+  address_neighborhood?: string;
+  address_city?: string;
+  address_state?: string;
 }
 
 export interface CustomerSession {
@@ -19,6 +26,13 @@ export interface CustomerSession {
   email?: string;
   phone?: string;
   companyId: string;
+  address_cep?: string;
+  address_street?: string;
+  address_number?: string;
+  address_complement?: string;
+  address_neighborhood?: string;
+  address_city?: string;
+  address_state?: string;
 }
 
 export interface OperatingHour {

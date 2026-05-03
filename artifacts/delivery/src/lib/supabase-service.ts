@@ -569,6 +569,25 @@ export async function findCustomerByEmail(companyId: string, email: string): Pro
   return data as Customer | null;
 }
 
+export async function updateCustomerAddress(customerId: string, address: {
+  cep?: string; street?: string; number?: string; complement?: string;
+  neighborhood?: string; city?: string; state?: string;
+}): Promise<boolean> {
+  const { error } = await supabase
+    .from("customers")
+    .update({
+      address_cep: address.cep || null,
+      address_street: address.street || null,
+      address_number: address.number || null,
+      address_complement: address.complement || null,
+      address_neighborhood: address.neighborhood || null,
+      address_city: address.city || null,
+      address_state: address.state || null,
+    })
+    .eq("id", customerId);
+  return !error;
+}
+
 export async function resetCustomerPassword(customerId: string, newPassword: string): Promise<boolean> {
   const password_hash = await bcrypt.hash(newPassword, 10);
   const { error } = await supabase
