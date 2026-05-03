@@ -4,7 +4,7 @@ import { Clock, CheckCircle2, ChefHat, Package, Motorbike, MapPin, X, ArrowLeft,
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
-import { getCompanyBySlug, getDeliveryOrderById, applyThemeColor, formatCurrency } from "@/lib/supabase-service";
+import { getCompanyBySlug, getDeliveryOrderById, applyThemeColor, formatCurrency, restoreOrderStock } from "@/lib/supabase-service";
 import { supabase } from "@/lib/supabase";
 import type { Company, DeliveryOrder, DeliveryOrderStatus } from "@/types";
 
@@ -94,7 +94,7 @@ export const OrderTrackingPage = () => {
     return () => { cancelled = true; clearInterval(poll); };
   }, [slug, orderId]);
 
-  // Realtime subscription to detect comanda_id being filled
+  // Realtime subscription: comanda_id filled + cancellation stock restore
   useEffect(() => {
     if (!orderId) return;
     const channel = supabase
@@ -103,10 +103,22 @@ export const OrderTrackingPage = () => {
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "delivery_orders", filter: `id=eq.${orderId}` },
         (payload) => {
+          const prev = payload.old as Partial<DeliveryOrder>;
           const updated = payload.new as DeliveryOrder;
           setOrder(updated);
+
           if (updated.comanda_id && !comandaConfirmed) {
             setComandaConfirmed(true);
+          }
+
+          // Restore stock when order is cancelled (only once, when prev status wasn't cancelled)
+          if (updated.status === "cancelled" && prev.status !== "cancelled") {
+            restoreOrderStock({
+              companyId: updated.company_id,
+              items: updated.items as import("@/types").CartItem[],
+              orderId: updated.id,
+              numericId: updated.numeric_id,
+            }).catch(console.error);
           }
         }
       )

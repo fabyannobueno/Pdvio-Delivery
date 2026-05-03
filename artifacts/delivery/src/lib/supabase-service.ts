@@ -158,6 +158,7 @@ export async function createDeliveryOrder(params: {
     return null;
   }
 
+  // Sales + sale_items (only for non dine_in)
   if (params.deliveryType !== "dine_in") {
     const saleNotes = [
       params.notes,
@@ -198,25 +199,76 @@ export async function createDeliveryOrder(params: {
         notes: null,
       }));
       await supabase.from("sale_items").insert(saleItems);
+    }
+  }
 
-      const movements = params.items
-        .filter((item) => item.productId)
-        .map((item) => ({
-          company_id: params.companyId,
-          product_id: item.productId,
-          kind: "sale",
-          quantity: item.weight ?? item.quantity,
-          reference: `Pedido #${order.numeric_id}`,
-          notes: `Venda delivery — ${item.name}`,
-        }));
-      if (movements.length > 0) {
-        const { error: movErr } = await supabase.from("stock_movements").insert(movements);
-        if (movErr) console.error("Error creating stock movements:", movErr);
+  // Stock movements (negative) + decrement stock_quantity — ALL delivery types
+  const stockItems = params.items.filter((item) => item.productId);
+  if (stockItems.length > 0) {
+    const movements = stockItems.map((item) => ({
+      company_id: params.companyId,
+      product_id: item.productId,
+      kind: "sale",
+      quantity: -(item.weight ?? item.quantity),
+      reference: `Pedido #${order.numeric_id}`,
+      notes: `Venda ${params.deliveryType === "dine_in" ? "mesa" : "delivery"} — ${item.name}`,
+    }));
+    const { error: movErr } = await supabase.from("stock_movements").insert(movements);
+    if (movErr) console.error("Error creating stock movements:", movErr);
+
+    for (const item of stockItems) {
+      const qty = item.weight ?? item.quantity;
+      const { data: prod } = await supabase
+        .from("products")
+        .select("stock_quantity")
+        .eq("id", item.productId)
+        .single();
+      if (prod?.stock_quantity != null) {
+        await supabase
+          .from("products")
+          .update({ stock_quantity: prod.stock_quantity - qty })
+          .eq("id", item.productId);
       }
     }
   }
 
   return { id: order.id, numeric_id: order.numeric_id };
+}
+
+export async function restoreOrderStock(params: {
+  companyId: string;
+  items: CartItem[];
+  orderId: string;
+  numericId?: number;
+}): Promise<void> {
+  const stockItems = params.items.filter((item) => item.productId);
+  if (stockItems.length === 0) return;
+
+  const movements = stockItems.map((item) => ({
+    company_id: params.companyId,
+    product_id: item.productId,
+    kind: "cancellation",
+    quantity: item.weight ?? item.quantity,
+    reference: `Cancelamento #${params.numericId ?? params.orderId.slice(0, 8)}`,
+    notes: `Estorno cancelamento — ${item.name}`,
+  }));
+  const { error: movErr } = await supabase.from("stock_movements").insert(movements);
+  if (movErr) console.error("Error creating cancellation movements:", movErr);
+
+  for (const item of stockItems) {
+    const qty = item.weight ?? item.quantity;
+    const { data: prod } = await supabase
+      .from("products")
+      .select("stock_quantity")
+      .eq("id", item.productId)
+      .single();
+    if (prod?.stock_quantity != null) {
+      await supabase
+        .from("products")
+        .update({ stock_quantity: prod.stock_quantity + qty })
+        .eq("id", item.productId);
+    }
+  }
 }
 
 export async function callWaiter(params: {
