@@ -1,5 +1,6 @@
 import { supabase } from "./supabase";
-import type { Company, Product, CartItem, DeliveryType } from "../types";
+import type { Company, Product, CartItem, DeliveryType, Customer } from "../types";
+import bcrypt from "bcryptjs";
 
 export async function getCompanyBySlug(slug: string): Promise<Company | null> {
   const { data, error } = await supabase
@@ -461,4 +462,88 @@ export async function submitOrderReview(params: {
 
 export function formatCurrency(value: number): string {
   return `R$ ${value.toFixed(2).replace(".", ",")}`;
+}
+
+// ─── Customer Auth ─────────────────────────────────────────────────────────
+
+export async function signupCustomer(params: {
+  companyId: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  password: string;
+}): Promise<Customer | null> {
+  const identifier = params.email?.toLowerCase().trim() || params.phone?.trim();
+  if (!identifier) return null;
+
+  const existing = await _findCustomer(params.companyId, identifier);
+  if (existing) return null;
+
+  const password_hash = await bcrypt.hash(params.password, 10);
+  const { data, error } = await supabase
+    .from("customers")
+    .insert({
+      company_id: params.companyId,
+      name: params.name.trim(),
+      email: params.email?.toLowerCase().trim() || null,
+      phone: params.phone?.trim() || null,
+      password_hash,
+    })
+    .select()
+    .single();
+
+  if (error) { console.error("signupCustomer error:", error); return null; }
+  return data as Customer;
+}
+
+export async function loginCustomer(params: {
+  companyId: string;
+  identifier: string;
+  password: string;
+}): Promise<Customer | null> {
+  const id = params.identifier.toLowerCase().trim();
+  const customer = await _findCustomer(params.companyId, id);
+  if (!customer || !customer.password_hash) return null;
+  const ok = await bcrypt.compare(params.password, customer.password_hash);
+  if (!ok) return null;
+  return customer;
+}
+
+export async function updateCustomerPassword(params: {
+  customerId: string;
+  currentPassword: string;
+  newPassword: string;
+}): Promise<{ ok: boolean; error?: string }> {
+  const { data, error } = await supabase
+    .from("customers")
+    .select("password_hash")
+    .eq("id", params.customerId)
+    .single();
+
+  if (error || !data) return { ok: false, error: "Cliente não encontrado." };
+  if (!data.password_hash) return { ok: false, error: "Sem senha cadastrada." };
+
+  const match = await bcrypt.compare(params.currentPassword, data.password_hash);
+  if (!match) return { ok: false, error: "Senha atual incorreta." };
+
+  const password_hash = await bcrypt.hash(params.newPassword, 10);
+  const { error: updErr } = await supabase
+    .from("customers")
+    .update({ password_hash })
+    .eq("id", params.customerId);
+
+  if (updErr) return { ok: false, error: "Erro ao atualizar senha." };
+  return { ok: true };
+}
+
+async function _findCustomer(companyId: string, identifier: string): Promise<Customer | null> {
+  const isEmail = identifier.includes("@");
+  const col = isEmail ? "email" : "phone";
+  const { data } = await supabase
+    .from("customers")
+    .select("*")
+    .eq("company_id", companyId)
+    .ilike(col, identifier)
+    .maybeSingle();
+  return data as Customer | null;
 }

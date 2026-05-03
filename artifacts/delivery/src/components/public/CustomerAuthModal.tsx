@@ -1,0 +1,150 @@
+import { useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { X, Eye, EyeOff, Loader2 } from "lucide-react";
+import { signupCustomer, loginCustomer } from "@/lib/supabase-service";
+import type { Company, CustomerSession } from "@/types";
+
+interface CustomerAuthModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  company: Company;
+  onAuthenticated: (session: CustomerSession) => void;
+}
+
+export const CustomerAuthModal = ({ isOpen, onClose, company, onAuthenticated }: CustomerAuthModalProps) => {
+  const primaryColor = company.delivery_primary_color || "#6d28d9";
+  const [closeHovered, setCloseHovered] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+
+  const [loginId, setLoginId] = useState("");
+  const [loginPass, setLoginPass] = useState("");
+  const [showLoginPass, setShowLoginPass] = useState(false);
+
+  const [signupName, setSignupName] = useState("");
+  const [signupEmail, setSignupEmail] = useState("");
+  const [signupPhone, setSignupPhone] = useState("");
+  const [signupPass, setSignupPass] = useState("");
+  const [signupConfirm, setSignupConfirm] = useState("");
+  const [showSignupPass, setShowSignupPass] = useState(false);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (!loginId.trim() || !loginPass) { setError("Preencha todos os campos."); return; }
+    setLoading(true);
+    const customer = await loginCustomer({ companyId: company.id, identifier: loginId, password: loginPass });
+    setLoading(false);
+    if (!customer) { setError("Identificador ou senha incorretos."); return; }
+    onAuthenticated({ id: customer.id, name: customer.name, email: customer.email, phone: customer.phone, companyId: company.id });
+  };
+
+  const handleSignup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    if (!signupName.trim()) { setError("Informe seu nome."); return; }
+    if (!signupEmail.trim() && !signupPhone.trim()) { setError("Informe e-mail ou telefone."); return; }
+    if (!signupPass) { setError("Informe uma senha."); return; }
+    if (signupPass.length < 6) { setError("Senha deve ter ao menos 6 caracteres."); return; }
+    if (signupPass !== signupConfirm) { setError("Senhas não coincidem."); return; }
+    setLoading(true);
+    const customer = await signupCustomer({
+      companyId: company.id,
+      name: signupName,
+      email: signupEmail.trim() || undefined,
+      phone: signupPhone.trim() || undefined,
+      password: signupPass,
+    });
+    setLoading(false);
+    if (!customer) { setError("E-mail ou telefone já cadastrado."); return; }
+    onAuthenticated({ id: customer.id, name: customer.name, email: customer.email, phone: customer.phone, companyId: company.id });
+  };
+
+  return (
+    <Dialog open={isOpen} onOpenChange={onClose}>
+      <DialogContent hideCloseButton className="max-w-md">
+        <DialogHeader>
+          <DialogTitle className="flex items-center justify-between">
+            Acesse sua conta
+            <button
+              onClick={onClose}
+              className="rounded-md p-2 transition-colors"
+              onMouseEnter={() => setCloseHovered(true)}
+              onMouseLeave={() => setCloseHovered(false)}
+              style={closeHovered ? { color: primaryColor, backgroundColor: `${primaryColor}1a` } : {}}
+            ><X className="w-4 h-4" /></button>
+          </DialogTitle>
+        </DialogHeader>
+
+        <Tabs defaultValue="login" onValueChange={() => setError("")}>
+          <TabsList className="w-full mb-4">
+            <TabsTrigger value="login" className="flex-1">Entrar</TabsTrigger>
+            <TabsTrigger value="signup" className="flex-1">Criar conta</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="login">
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="space-y-1">
+                <Label>E-mail ou telefone</Label>
+                <Input placeholder="seu@email.com ou (11) 99999-9999" value={loginId} onChange={e => setLoginId(e.target.value)} autoComplete="username" />
+              </div>
+              <div className="space-y-1">
+                <Label>Senha</Label>
+                <div className="relative">
+                  <Input type={showLoginPass ? "text" : "password"} placeholder="••••••" value={loginPass} onChange={e => setLoginPass(e.target.value)} autoComplete="current-password" className="pr-10" />
+                  <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" onClick={() => setShowLoginPass(v => !v)}>
+                    {showLoginPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+              {error && <p className="text-sm text-destructive">{error}</p>}
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Entrar
+              </Button>
+            </form>
+          </TabsContent>
+
+          <TabsContent value="signup">
+            <form onSubmit={handleSignup} className="space-y-4">
+              <div className="space-y-1">
+                <Label>Nome completo</Label>
+                <Input placeholder="Seu nome" value={signupName} onChange={e => setSignupName(e.target.value)} />
+              </div>
+              <div className="space-y-1">
+                <Label>E-mail</Label>
+                <Input type="email" placeholder="seu@email.com" value={signupEmail} onChange={e => setSignupEmail(e.target.value)} autoComplete="email" />
+              </div>
+              <div className="space-y-1">
+                <Label>Telefone</Label>
+                <Input placeholder="(11) 99999-9999" value={signupPhone} onChange={e => setSignupPhone(e.target.value)} autoComplete="tel" />
+              </div>
+              <div className="space-y-1">
+                <Label>Senha</Label>
+                <div className="relative">
+                  <Input type={showSignupPass ? "text" : "password"} placeholder="Mínimo 6 caracteres" value={signupPass} onChange={e => setSignupPass(e.target.value)} autoComplete="new-password" className="pr-10" />
+                  <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" onClick={() => setShowSignupPass(v => !v)}>
+                    {showSignupPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
+                </div>
+              </div>
+              <div className="space-y-1">
+                <Label>Confirmar senha</Label>
+                <Input type={showSignupPass ? "text" : "password"} placeholder="Repita a senha" value={signupConfirm} onChange={e => setSignupConfirm(e.target.value)} autoComplete="new-password" />
+              </div>
+              {error && <p className="text-sm text-destructive">{error}</p>}
+              <Button type="submit" className="w-full" disabled={loading}>
+                {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                Criar conta
+              </Button>
+            </form>
+          </TabsContent>
+        </Tabs>
+      </DialogContent>
+    </Dialog>
+  );
+};

@@ -10,6 +10,8 @@ import { MobileNavbar } from "./MobileNavbar";
 import { DesktopSidebar } from "./DesktopSidebar";
 import { MyOrdersModal } from "./MyOrdersModal";
 import { StoreInfoModal } from "./StoreInfoModal";
+import { CustomerAuthModal } from "./CustomerAuthModal";
+import { ChangePasswordModal } from "./ChangePasswordModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +19,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { Search, ShoppingCart as CartIcon, Tag, Clock, Motorbike, ChevronLeft, ChevronRight, DollarSign, Star, BellRing, UtensilsCrossed, Loader2 } from "lucide-react";
-import type { Company, Product, CartItem, ProductAddon, MesaParams } from "@/types";
+import type { Company, Product, CartItem, ProductAddon, MesaParams, CustomerSession } from "@/types";
 
 export const PublicStorePage = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -41,6 +43,9 @@ export const PublicStorePage = () => {
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [callingWaiter, setCallingWaiter] = useState(false);
   const scrollRefs = useRef<Record<string, HTMLDivElement | null>>({});
+  const [customer, setCustomer] = useState<CustomerSession | null>(null);
+  const [showAuth, setShowAuth] = useState(false);
+  const [showChangePassword, setShowChangePassword] = useState(false);
 
   // Parse mesa params from URL
   const mesaParams: MesaParams | undefined = (() => {
@@ -93,6 +98,8 @@ export const PublicStorePage = () => {
     if (!company) return;
     const saved = localStorage.getItem(`cart_${company.id}`);
     if (saved) { try { setCart(JSON.parse(saved)); } catch {} }
+    const savedSession = localStorage.getItem(`customer_session_${company.id}`);
+    if (savedSession) { try { setCustomer(JSON.parse(savedSession)); } catch {} }
   }, [company?.id]);
 
   useEffect(() => {
@@ -343,8 +350,20 @@ export const PublicStorePage = () => {
 
   return (
     <>
-      <MobileNavbar company={company} cartItemCount={cartItemCount} onShowCart={() => setShowCart(true)} onShowOrders={() => setShowOrders(true)} onShowStoreInfo={() => setShowStoreInfo(true)} />
-      <DesktopSidebar company={company} cartItemCount={cartItemCount} onShowCart={() => setShowCart(true)} onShowOrders={() => setShowOrders(true)} onShowStoreInfo={() => setShowStoreInfo(true)} />
+      <MobileNavbar
+        company={company} cartItemCount={cartItemCount}
+        onShowCart={() => setShowCart(true)} onShowOrders={() => setShowOrders(true)} onShowStoreInfo={() => setShowStoreInfo(true)}
+        customer={customer} onShowAuth={() => setShowAuth(true)}
+        onLogout={() => { setCustomer(null); localStorage.removeItem(`customer_session_${company.id}`); }}
+        onChangePassword={() => setShowChangePassword(true)}
+      />
+      <DesktopSidebar
+        company={company} cartItemCount={cartItemCount}
+        onShowCart={() => setShowCart(true)} onShowOrders={() => setShowOrders(true)} onShowStoreInfo={() => setShowStoreInfo(true)}
+        customer={customer} onShowAuth={() => setShowAuth(true)}
+        onLogout={() => { setCustomer(null); localStorage.removeItem(`customer_session_${company.id}`); }}
+        onChangePassword={() => setShowChangePassword(true)}
+      />
 
       <div className="min-h-screen bg-gray-50 pt-16 md:pt-0 md:ml-64">
         {/* Cover */}
@@ -631,6 +650,20 @@ export const PublicStorePage = () => {
       <CheckoutModal isOpen={showCheckout} onClose={() => setShowCheckout(false)} cart={cart} setCart={setCart} company={company} mesaParams={mesaParams} />
       <MyOrdersModal isOpen={showOrders} onClose={() => setShowOrders(false)} company={company} />
       <StoreInfoModal isOpen={showStoreInfo} onClose={() => setShowStoreInfo(false)} company={company} />
+      <CustomerAuthModal
+        isOpen={showAuth} onClose={() => setShowAuth(false)} company={company}
+        onAuthenticated={session => {
+          setCustomer(session);
+          localStorage.setItem(`customer_session_${company.id}`, JSON.stringify(session));
+          setShowAuth(false);
+        }}
+      />
+      {customer && (
+        <ChangePasswordModal
+          isOpen={showChangePassword} onClose={() => setShowChangePassword(false)}
+          company={company} session={customer}
+        />
+      )}
     </>
   );
 };

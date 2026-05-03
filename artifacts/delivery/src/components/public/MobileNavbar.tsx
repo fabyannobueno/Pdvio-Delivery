@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
-import { Menu, Home, ShoppingCart as CartIcon, Package, Info } from "lucide-react";
-import type { Company } from "@/types";
+import { Menu, Home, ShoppingCart as CartIcon, Package, Info, User, LogOut, KeyRound, LogIn } from "lucide-react";
+import type { Company, CustomerSession } from "@/types";
 
 interface MobileNavbarProps {
   company: Company;
@@ -11,9 +11,13 @@ interface MobileNavbarProps {
   onShowCart: () => void;
   onShowOrders: () => void;
   onShowStoreInfo: () => void;
+  customer: CustomerSession | null;
+  onShowAuth: () => void;
+  onLogout: () => void;
+  onChangePassword: () => void;
 }
 
-export const MobileNavbar = ({ company, cartItemCount, onShowCart, onShowOrders, onShowStoreInfo }: MobileNavbarProps) => {
+export const MobileNavbar = ({ company, cartItemCount, onShowCart, onShowOrders, onShowStoreInfo, customer, onShowAuth, onLogout, onChangePassword }: MobileNavbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [, setLocation] = useLocation();
 
@@ -21,10 +25,7 @@ export const MobileNavbar = ({ company, cartItemCount, onShowCart, onShowOrders,
     {
       icon: Home,
       label: "Início",
-      action: () => {
-        setLocation(`/${company.delivery_slug}`);
-        setIsOpen(false);
-      }
+      action: () => { setLocation(`/${company.delivery_slug}`); setIsOpen(false); }
     },
     {
       icon: CartIcon,
@@ -68,8 +69,8 @@ export const MobileNavbar = ({ company, cartItemCount, onShowCart, onShowOrders,
             <SheetHeader className="p-6 pb-4 border-b border-border">
               <SheetTitle className="text-left">Menu</SheetTitle>
             </SheetHeader>
-            <div className="p-6">
-              <nav className="space-y-2">
+            <div className="p-6 flex flex-col h-full">
+              <nav className="space-y-2 flex-1">
                 {menuItems.map((item, index) => {
                   const Icon = item.icon;
                   return (
@@ -85,6 +86,35 @@ export const MobileNavbar = ({ company, cartItemCount, onShowCart, onShowOrders,
                   );
                 })}
               </nav>
+
+              <div className="border-t border-border pt-4 space-y-2">
+                {customer ? (
+                  <>
+                    <div className="flex items-center gap-3 px-4 py-2">
+                      <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <User className="w-4 h-4 text-primary" />
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-sm font-medium truncate">{customer.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">{customer.email || customer.phone}</p>
+                      </div>
+                    </div>
+                    <Button variant="ghost" className="w-full justify-start h-11 px-4" onClick={() => { onChangePassword(); setIsOpen(false); }}>
+                      <KeyRound className="w-4 h-4 mr-3" />
+                      Alterar senha
+                    </Button>
+                    <Button variant="ghost" className="w-full justify-start h-11 px-4 text-red-500 hover:text-red-600 hover:bg-red-50" onClick={() => { onLogout(); setIsOpen(false); }}>
+                      <LogOut className="w-4 h-4 mr-3" />
+                      Sair
+                    </Button>
+                  </>
+                ) : (
+                  <Button variant="ghost" className="w-full justify-start h-11 px-4" onClick={() => { onShowAuth(); setIsOpen(false); }}>
+                    <LogIn className="w-4 h-4 mr-3" />
+                    Entrar / Criar conta
+                  </Button>
+                )}
+              </div>
             </div>
           </SheetContent>
         </Sheet>

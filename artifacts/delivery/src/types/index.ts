@@ -1,3 +1,25 @@
+export interface Customer {
+  id: string;
+  company_id: string;
+  name: string;
+  phone?: string;
+  email?: string;
+  document?: string;
+  notes?: string;
+  created_at: string;
+  updated_at: string;
+  credit_limit?: number;
+  password_hash?: string;
+}
+
+export interface CustomerSession {
+  id: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  companyId: string;
+}
+
 export interface OperatingHour {
   day: number | string;
   isOpen: boolean;
