@@ -241,14 +241,69 @@ export const PublicStorePage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 pt-16 md:pt-0 md:ml-64 p-6">
-        <div className="max-w-6xl mx-auto space-y-6">
-          <Skeleton className="w-full h-48 rounded-xl" />
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {[...Array(4)].map((_, i) => <Skeleton key={i} className="h-32 rounded-lg" />)}
+      <div className="min-h-screen bg-gray-50">
+        {/* Mobile navbar skeleton */}
+        <div className="md:hidden fixed top-0 left-0 right-0 z-50 h-16 bg-white border-b flex items-center px-4 gap-3">
+          <Skeleton className="w-8 h-8 rounded-full" />
+          <Skeleton className="h-4 w-32 rounded" />
+          <div className="ml-auto flex gap-3">
+            <Skeleton className="w-8 h-8 rounded-full" />
+            <Skeleton className="w-8 h-8 rounded-full" />
           </div>
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {[...Array(8)].map((_, i) => <Skeleton key={i} className="h-52 rounded-lg" />)}
+        </div>
+
+        {/* Desktop sidebar skeleton */}
+        <div className="hidden md:flex fixed top-0 left-0 h-full w-64 bg-white border-r flex-col p-4 gap-4 z-40">
+          <div className="flex items-center gap-3 mb-2">
+            <Skeleton className="w-10 h-10 rounded-full" />
+            <Skeleton className="h-4 w-28 rounded" />
+          </div>
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="flex items-center gap-3">
+              <Skeleton className="w-5 h-5 rounded" />
+              <Skeleton className="h-4 w-24 rounded" />
+            </div>
+          ))}
+        </div>
+
+        {/* Main content */}
+        <div className="pt-16 md:pt-0 md:ml-64">
+          {/* Cover image */}
+          <Skeleton className="w-full h-48 md:h-64 rounded-none" />
+
+          <div className="px-4 md:px-8 py-6 space-y-5">
+            {/* Badges row */}
+            <div className="flex flex-wrap gap-2">
+              {[80, 100, 90, 110, 95].map((w, i) => (
+                <Skeleton key={i} className={`h-6 w-${w === 80 ? '20' : w === 100 ? '24' : w === 90 ? '28' : w === 110 ? '32' : '24'} rounded-full`} />
+              ))}
+            </div>
+
+            {/* Search bar */}
+            <Skeleton className="h-10 w-full rounded-md" />
+
+            {/* Category tabs */}
+            <div className="flex gap-2 overflow-hidden">
+              {[...Array(5)].map((_, i) => (
+                <Skeleton key={i} className="h-8 w-20 rounded-md shrink-0" />
+              ))}
+            </div>
+
+            {/* Category + product cards */}
+            {[...Array(2)].map((_, ci) => (
+              <div key={ci} className="space-y-3">
+                <Skeleton className="h-6 w-32 rounded" />
+                <div className="grid grid-cols-2 md:flex md:flex-row gap-4">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="md:w-56 shrink-0 space-y-2">
+                      <Skeleton className="w-full h-36 md:w-56 md:h-40 rounded-lg" />
+                      <Skeleton className="h-4 w-3/4 rounded" />
+                      <Skeleton className="h-4 w-1/2 rounded" />
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </div>
