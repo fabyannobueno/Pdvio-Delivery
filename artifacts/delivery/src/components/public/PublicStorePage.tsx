@@ -46,6 +46,7 @@ export const PublicStorePage = () => {
   const [customer, setCustomer] = useState<CustomerSession | null>(null);
   const [showAuth, setShowAuth] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [pendingCheckout, setPendingCheckout] = useState(false);
 
   // Parse mesa params from URL
   const mesaParams: MesaParams | undefined = (() => {
@@ -646,7 +647,7 @@ export const PublicStorePage = () => {
           />
         </>
       )}
-      <ShoppingCart isOpen={showCart} onClose={() => setShowCart(false)} cart={cart} setCart={setCart} company={company} onCheckout={() => { setShowCart(false); setShowCheckout(true); }} />
+      <ShoppingCart isOpen={showCart} onClose={() => setShowCart(false)} cart={cart} setCart={setCart} company={company} onCheckout={() => { setShowCart(false); if (!customer) { setPendingCheckout(true); setShowAuth(true); } else { setShowCheckout(true); } }} />
       <CheckoutModal isOpen={showCheckout} onClose={() => setShowCheckout(false)} cart={cart} setCart={setCart} company={company} mesaParams={mesaParams} />
       <MyOrdersModal isOpen={showOrders} onClose={() => setShowOrders(false)} company={company} />
       <StoreInfoModal isOpen={showStoreInfo} onClose={() => setShowStoreInfo(false)} company={company} />
@@ -656,6 +657,7 @@ export const PublicStorePage = () => {
           setCustomer(session);
           localStorage.setItem(`customer_session_${company.id}`, JSON.stringify(session));
           setShowAuth(false);
+          if (pendingCheckout) { setPendingCheckout(false); setShowCheckout(true); }
         }}
       />
       {customer && (
