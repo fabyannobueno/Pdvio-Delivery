@@ -252,7 +252,15 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
         const orderId = sale.numeric_id ?? sale.id;
         const trackingUrl = `${window.location.origin}/${company.delivery_slug}/pedido/${orderId}`;
         const message = generateOrderWhatsAppMessage({
-          company, items: cart, total, deliveryFee, paymentMethod: selectedPayment,
+          company,
+          items: cart,
+          subtotal,
+          promotionDiscount,
+          couponDiscount,
+          couponCode: appliedCoupon?.code,
+          total,
+          deliveryFee,
+          paymentMethod: selectedPayment,
           deliveryType, customerName: customerData.name, customerPhone: customerData.phone,
           address, notes: orderNotes, changeNote: changeNote ?? undefined, trackingUrl,
         });

@@ -410,6 +410,10 @@ export async function sendWhatsAppOrder(
 export function generateOrderWhatsAppMessage(params: {
   company: Company;
   items: CartItem[];
+  subtotal: number;
+  promotionDiscount?: number;
+  couponDiscount?: number;
+  couponCode?: string;
   total: number;
   deliveryFee: number;
   paymentMethod: string;
@@ -441,6 +445,13 @@ export function generateOrderWhatsAppMessage(params: {
     msg += ` — R$ ${item.totalPrice.toFixed(2).replace(".", ",")}\n`;
   }
 
+  msg += `\n💰 *Subtotal: R$ ${params.subtotal.toFixed(2).replace(".", ",")}*`;
+  if (params.promotionDiscount && params.promotionDiscount > 0) {
+    msg += `\n🏷️ *Promoções:* − R$ ${params.promotionDiscount.toFixed(2).replace(".", ",")}`;
+  }
+  if (params.couponDiscount && params.couponDiscount > 0) {
+    msg += `\n🏷️ *Cupom${params.couponCode ? ` (${params.couponCode})` : ""}:* − R$ ${params.couponDiscount.toFixed(2).replace(".", ",")}`;
+  }
   msg += `\n💰 *Total: R$ ${params.total.toFixed(2).replace(".", ",")}*`;
   if (params.deliveryFee > 0) {
     msg += `\n  (incl. taxa entrega: R$ ${params.deliveryFee.toFixed(2).replace(".", ",")})`;
