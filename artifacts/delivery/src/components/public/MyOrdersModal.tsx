@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
-import { Loader2, Package, Search, Phone, X, ChevronRight } from "lucide-react";
+import { Loader2, Package, Search, Phone, X, ChevronRight, ChevronLeft } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 import type { Company, DeliveryOrder } from "@/types";
 
@@ -26,14 +26,20 @@ const STATUS_MAP: Record<string, { label: string; color: string }> = {
   cancelled:          { label: "Cancelado",        color: "bg-red-500" },
 };
 
+const PAGE_SIZE = 2;
+
 export const MyOrdersModal = ({ isOpen, onClose, company }: MyOrdersModalProps) => {
   const [phone, setPhone] = useState("");
   const [orders, setOrders] = useState<DeliveryOrder[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [closeHovered, setCloseHovered] = useState(false);
+  const [page, setPage] = useState(1);
   const primaryColor = company.delivery_primary_color || "#6d28d9";
   const [, navigate] = useLocation();
+
+  const totalPages = Math.max(1, Math.ceil(orders.length / PAGE_SIZE));
+  const pagedOrders = orders.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const formatPhone = (value: string) => {
     const n = value.replace(/\D/g, "").slice(0, 11);
@@ -62,6 +68,7 @@ export const MyOrdersModal = ({ isOpen, onClose, company }: MyOrdersModalProps) 
         setOrders([]);
       } else {
         setOrders((data || []) as DeliveryOrder[]);
+        setPage(1);
       }
     } catch (err) {
       console.error("Error:", err);
@@ -84,6 +91,7 @@ export const MyOrdersModal = ({ isOpen, onClose, company }: MyOrdersModalProps) 
     setPhone("");
     setOrders([]);
     setSearched(false);
+    setPage(1);
     onClose();
   };
 
@@ -137,7 +145,7 @@ export const MyOrdersModal = ({ isOpen, onClose, company }: MyOrdersModalProps) 
             ) : searched ? (
               orders.length > 0 ? (
                 <div className="space-y-4">
-                  {orders.map(order => {
+                  {pagedOrders.map(order => {
                     const status = STATUS_MAP[order.status] || { label: order.status, color: "bg-gray-500" };
                     return (
                       <Card
@@ -185,6 +193,27 @@ export const MyOrdersModal = ({ isOpen, onClose, company }: MyOrdersModalProps) 
                       </Card>
                     );
                   })}
+                  {totalPages > 1 && (
+                    <div className="flex items-center justify-between pt-2">
+                      <Button
+                        variant="outline" size="sm"
+                        disabled={page === 1}
+                        onClick={() => setPage(p => p - 1)}
+                      >
+                        <ChevronLeft className="w-4 h-4 mr-1" /> Anterior
+                      </Button>
+                      <span className="text-sm text-muted-foreground">
+                        {page} / {totalPages}
+                      </span>
+                      <Button
+                        variant="outline" size="sm"
+                        disabled={page === totalPages}
+                        onClick={() => setPage(p => p + 1)}
+                      >
+                        Próximo <ChevronRight className="w-4 h-4 ml-1" />
+                      </Button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="text-center py-12">
