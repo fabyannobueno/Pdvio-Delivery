@@ -264,39 +264,37 @@ export const OrderTrackingPage = () => {
               {isDineIn ? `Mesa: ${order.table_identifier ?? "—"}` : order.delivery_type === "delivery" ? "Entrega" : "Retirada"}
             </p>
 
-            {steps.map((step, idx) => {
-              const Icon = step.icon;
-              const done = idx < currentIdx;
-              const active = idx === currentIdx;
-              const pending = idx > currentIdx;
-              const visibleSteps = steps.filter((_, i) => i <= currentIdx);
-              const isLast = idx === visibleSteps.length - 1;
-
-              if (pending) return null;
-
-              return (
-                <div key={step.key} className="flex gap-3">
-                  <div className="flex flex-col items-center">
-                    <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all
-                      ${active ? `${step.bg} ${step.color} ring-2 ring-current ring-offset-1` : ""}
-                      ${done ? "bg-green-100 text-green-500" : ""}
-                    `}>
-                      {done ? <CheckCircle2 className="w-5 h-5" /> : <Icon className={`w-5 h-5 ${active ? "animate-pulse" : ""}`} />}
+            {(() => {
+              const safeIdx = currentIdx >= 0 ? currentIdx : 0;
+              const visibleSteps = steps.slice(0, safeIdx + 1);
+              return visibleSteps.map((step, visIdx) => {
+                const Icon = step.icon;
+                const isLast = visIdx === visibleSteps.length - 1;
+                const isActive = visIdx === safeIdx;
+                const isDone = visIdx < safeIdx;
+                return (
+                  <div key={step.key} className="flex gap-3">
+                    <div className="flex flex-col items-center">
+                      <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all
+                        ${isActive ? `${step.bg} ${step.color} ring-2 ring-current ring-offset-1` : ""}
+                        ${isDone ? "bg-green-100 text-green-500" : ""}
+                      `}>
+                        {isDone ? <CheckCircle2 className="w-5 h-5" /> : <Icon className={`w-5 h-5 ${isActive ? "animate-pulse" : ""}`} />}
+                      </div>
+                      {!isLast && (
+                        <div className="w-0.5 h-8 mt-1 rounded-full bg-green-400" />
+                      )}
                     </div>
-                    {!isLast && (
-                      <div className="w-0.5 h-8 mt-1 rounded-full bg-green-400" />
-                    )}
+                    <div className={`pb-6 min-w-0 ${isLast ? "pb-0" : ""}`}>
+                      <p className={`font-medium text-sm leading-tight ${isActive ? step.color : "text-foreground"}`}>
+                        {step.label}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{step.description}</p>
+                    </div>
                   </div>
-
-                  <div className={`pb-6 min-w-0 ${isLast ? "pb-0" : ""}`}>
-                    <p className={`font-medium text-sm leading-tight ${active ? step.color : "text-foreground"}`}>
-                      {step.label}
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{step.description}</p>
-                  </div>
-                </div>
-              );
-            })}
+                );
+              });
+            })()}
           </div>
         )}
 
