@@ -565,6 +565,7 @@ export async function signupCustomer(params: {
   email?: string;
   phone?: string;
   password: string;
+  document?: string;
 }): Promise<Customer | null> {
   const identifier = params.email?.toLowerCase().trim() || params.phone?.trim();
   if (!identifier) return null;
@@ -583,6 +584,7 @@ export async function signupCustomer(params: {
       phone: params.phone?.trim() || null,
       password_hash,
       email_verified: !hasEmail,
+      document: params.document?.replace(/\D/g, "").trim() || null,
     })
     .select()
     .single();
