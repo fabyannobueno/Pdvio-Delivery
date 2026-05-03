@@ -36,6 +36,22 @@ function maskCpf(value: string): string {
   return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
 }
 
+function isValidCpf(value: string): boolean {
+  const d = value.replace(/\D/g, "");
+  if (d.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(d)) return false;
+  let sum = 0;
+  for (let i = 0; i < 9; i++) sum += parseInt(d[i]) * (10 - i);
+  let r = (sum * 10) % 11;
+  if (r === 10 || r === 11) r = 0;
+  if (r !== parseInt(d[9])) return false;
+  sum = 0;
+  for (let i = 0; i < 10; i++) sum += parseInt(d[i]) * (11 - i);
+  r = (sum * 10) % 11;
+  if (r === 10 || r === 11) r = 0;
+  return r === parseInt(d[10]);
+}
+
 export const CustomerAuthModal = ({ isOpen, onClose, company, onAuthenticated }: CustomerAuthModalProps) => {
   const primaryColor = company.delivery_primary_color || "#6d28d9";
   const [closeHovered, setCloseHovered] = useState(false);
@@ -107,12 +123,12 @@ export const CustomerAuthModal = ({ isOpen, onClose, company, onAuthenticated }:
     setError("");
     if (!signupName.trim()) { setError("Informe seu nome."); return; }
     if (!signupEmail.trim() && !signupPhone.trim()) { setError("Informe e-mail ou telefone."); return; }
-    if (!signupCpf.trim() || signupCpf.replace(/\D/g, "").length < 11) { setError("Informe um CPF válido."); return; }
+    if (!signupCpf.trim() || !isValidCpf(signupCpf)) { setError("CPF inválido. Verifique e tente novamente."); return; }
     if (!signupPass) { setError("Informe uma senha."); return; }
     if (signupPass.length < 6) { setError("Senha deve ter ao menos 6 caracteres."); return; }
     if (signupPass !== signupConfirm) { setError("Senhas não coincidem."); return; }
     setLoading(true);
-    const customer = await signupCustomer({
+    const { customer, error: signupError } = await signupCustomer({
       companyId: company.id,
       name: signupName,
       email: signupEmail.trim() || undefined,
@@ -120,7 +136,13 @@ export const CustomerAuthModal = ({ isOpen, onClose, company, onAuthenticated }:
       password: signupPass,
       document: signupCpf.trim() || undefined,
     });
-    if (!customer) { setLoading(false); setError("E-mail ou telefone já cadastrado."); return; }
+    if (!customer) {
+      setLoading(false);
+      if (signupError === "cpf_taken") setError("Este CPF já possui uma conta cadastrada.");
+      else if (signupError === "identifier_taken") setError("E-mail ou telefone já cadastrado.");
+      else setError("Erro ao criar conta. Tente novamente.");
+      return;
+    }
 
     if (customer.email && customer.email_verified === false) {
       const verifyUrl = `${window.location.origin}/${slug}/verificar-email?id=${customer.id}`;
@@ -304,7 +326,7 @@ export const CustomerAuthModal = ({ isOpen, onClose, company, onAuthenticated }:
                   <Input placeholder="(11) 99999-9999" value={signupPhone} inputMode="numeric" autoComplete="tel" onChange={e => setSignupPhone(maskPhone(e.target.value))} />
                 </div>
                 <div className="space-y-1">
-                  <Label>CPF <span className="text-destructive">*</span></Label>
+                  <Label>CPF</Label>
                   <Input placeholder="000.000.000-00" value={signupCpf} inputMode="numeric" autoComplete="off" onChange={e => setSignupCpf(maskCpf(e.target.value))} maxLength={14} />
                 </div>
                 <div className="space-y-1">

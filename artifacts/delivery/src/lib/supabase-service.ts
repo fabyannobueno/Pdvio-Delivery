@@ -566,12 +566,24 @@ export async function signupCustomer(params: {
   phone?: string;
   password: string;
   document?: string;
-}): Promise<Customer | null> {
+}): Promise<{ customer: Customer | null; error?: "identifier_taken" | "cpf_taken" | "unknown" }> {
   const identifier = params.email?.toLowerCase().trim() || params.phone?.trim();
-  if (!identifier) return null;
+  if (!identifier) return { customer: null, error: "unknown" };
 
   const existing = await _findCustomer(params.companyId, identifier);
-  if (existing) return null;
+  if (existing) return { customer: null, error: "identifier_taken" };
+
+  const cpfDigits = params.document?.replace(/\D/g, "").trim() || null;
+
+  if (cpfDigits) {
+    const { data: cpfExists } = await supabase
+      .from("customers")
+      .select("id")
+      .eq("company_id", params.companyId)
+      .eq("document", cpfDigits)
+      .maybeSingle();
+    if (cpfExists) return { customer: null, error: "cpf_taken" };
+  }
 
   const password_hash = await bcrypt.hash(params.password, 10);
   const hasEmail = !!params.email?.trim();
@@ -584,13 +596,13 @@ export async function signupCustomer(params: {
       phone: params.phone?.trim() || null,
       password_hash,
       email_verified: !hasEmail,
-      document: params.document?.replace(/\D/g, "").trim() || null,
+      document: cpfDigits,
     })
     .select()
     .single();
 
-  if (error) { console.error("signupCustomer error:", error); return null; }
-  return data as Customer;
+  if (error) { console.error("signupCustomer error:", error); return { customer: null, error: "unknown" }; }
+  return { customer: data as Customer };
 }
 
 export async function loginCustomer(params: {
