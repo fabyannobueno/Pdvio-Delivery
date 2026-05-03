@@ -46,6 +46,8 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
   );
   const defaultPayment = (availablePayments.find(p => p.id === "pix") ?? availablePayments[0])?.id as PaymentMethod ?? "pix";
   const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>(defaultPayment);
+  const [needsChange, setNeedsChange] = useState(false);
+  const [changeFor, setChangeFor] = useState("");
 
   useEffect(() => {
     if (isMesaMode) setDeliveryType("dine_in");
@@ -107,6 +109,12 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
     setCustomerData(prev => ({ ...prev, phone: formatted }));
   };
 
+  const handleChangeForInput = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const digits = e.target.value.replace(/\D/g, "");
+    const num = parseInt(digits || "0", 10) / 100;
+    setChangeFor(num > 0 ? num.toLocaleString("pt-BR", { style: "currency", currency: "BRL" }) : "");
+  };
+
   const buildAddress = () => {
     const parts = [customerData.street, customerData.number, customerData.neighborhood, customerData.city, customerData.state].filter(Boolean);
     return parts.join(", ");
@@ -128,11 +136,18 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
       const tableIdentifier = deliveryType === "dine_in" ? mesaParams?.mesa : undefined;
       const companyId = mesaParams?.empresa ?? company.id;
 
+      const changeNote = selectedPayment === "cash" && needsChange && changeFor
+        ? `Troco para: ${changeFor}`
+        : selectedPayment === "cash" && needsChange
+        ? "Precisa de troco (valor não informado)"
+        : null;
+      const fullNotes = [orderNotes, changeNote].filter(Boolean).join(" | ");
+
       const sale = await createDeliveryOrder({
         companyId,
         items: cart,
         paymentMethod: selectedPayment,
-        notes: orderNotes,
+        notes: fullNotes || undefined,
         deliveryType,
         deliveryFee,
         customerName: customerData.name,
@@ -155,6 +170,7 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
           customerPhone: customerData.phone,
           address,
           notes: orderNotes,
+          changeNote: changeNote ?? undefined,
         });
 
         if (company.delivery_whatsapp) {
@@ -299,6 +315,34 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
               </div>
             </RadioGroup>
           </div>
+
+          {/* Troco (apenas dinheiro) */}
+          {selectedPayment === "cash" && (
+            <div className="space-y-3 rounded-lg border p-3 bg-muted/30">
+              <div className="flex items-center justify-between">
+                <Label className="font-medium">Precisa de troco?</Label>
+                <button
+                  type="button"
+                  onClick={() => { setNeedsChange(v => !v); setChangeFor(""); }}
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${needsChange ? "bg-primary" : "bg-muted-foreground/30"}`}
+                >
+                  <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${needsChange ? "translate-x-6" : "translate-x-1"}`} />
+                </button>
+              </div>
+              {needsChange && (
+                <div>
+                  <Label htmlFor="change-for" className="text-sm text-muted-foreground mb-1 block">Troco para quanto? (opcional)</Label>
+                  <Input
+                    id="change-for"
+                    placeholder="R$ 0,00"
+                    inputMode="numeric"
+                    value={changeFor}
+                    onChange={handleChangeForInput}
+                  />
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Observações */}
           <div>

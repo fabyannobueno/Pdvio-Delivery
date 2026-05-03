@@ -330,6 +330,7 @@ export function generateOrderWhatsAppMessage(params: {
   address?: string;
   tableIdentifier?: string;
   notes?: string;
+  changeNote?: string;
 }): string {
   const paymentLabels: Record<string, string> = {
     pix: "PIX",
@@ -354,7 +355,9 @@ export function generateOrderWhatsAppMessage(params: {
   if (params.deliveryFee > 0) {
     msg += `\n  (incl. taxa entrega: R$ ${params.deliveryFee.toFixed(2).replace(".", ",")})`;
   }
-  msg += `\n💳 *Pagamento:* ${paymentLabels[params.paymentMethod] ?? params.paymentMethod}\n`;
+  msg += `\n💳 *Pagamento:* ${paymentLabels[params.paymentMethod] ?? params.paymentMethod}`;
+  if (params.changeNote) msg += `\n💵 *${params.changeNote}*`;
+  msg += `\n`;
 
   if (params.deliveryType === "dine_in" && params.tableIdentifier) {
     msg += `\n🍽️ *Mesa:* ${params.tableIdentifier}\n`;
