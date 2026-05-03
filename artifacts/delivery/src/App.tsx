@@ -5,6 +5,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { PublicStorePage } from "@/components/public/PublicStorePage";
 import { OrderTrackingPage } from "@/components/public/OrderTrackingPage";
 import { ResetPasswordPage } from "@/components/public/ResetPasswordPage";
+import { VerifyEmailPage } from "@/components/public/VerifyEmailPage";
 import Home from "@/pages/home";
 import NotFound from "@/pages/not-found";
 
@@ -16,6 +17,7 @@ function Router() {
       <Route path="/" component={Home} />
       <Route path="/:slug/pedido/:orderId" component={OrderTrackingPage} />
       <Route path="/:slug/reset-senha" component={ResetPasswordPage} />
+      <Route path="/:slug/verificar-email" component={VerifyEmailPage} />
       <Route path="/:slug" component={PublicStorePage} />
       <Route component={NotFound} />
     </Switch>

@@ -480,6 +480,7 @@ export async function signupCustomer(params: {
   if (existing) return null;
 
   const password_hash = await bcrypt.hash(params.password, 10);
+  const hasEmail = !!params.email?.trim();
   const { data, error } = await supabase
     .from("customers")
     .insert({
@@ -488,6 +489,7 @@ export async function signupCustomer(params: {
       email: params.email?.toLowerCase().trim() || null,
       phone: params.phone?.trim() || null,
       password_hash,
+      email_verified: !hasEmail,
     })
     .select()
     .single();
@@ -500,13 +502,22 @@ export async function loginCustomer(params: {
   companyId: string;
   identifier: string;
   password: string;
-}): Promise<Customer | null> {
+}): Promise<{ customer: Customer | null; unverified?: boolean }> {
   const id = params.identifier.toLowerCase().trim();
   const customer = await _findCustomer(params.companyId, id);
-  if (!customer || !customer.password_hash) return null;
+  if (!customer || !customer.password_hash) return { customer: null };
   const ok = await bcrypt.compare(params.password, customer.password_hash);
-  if (!ok) return null;
-  return customer;
+  if (!ok) return { customer: null };
+  if (customer.email && customer.email_verified === false) return { customer: null, unverified: true };
+  return { customer };
+}
+
+export async function verifyCustomerEmail(customerId: string): Promise<boolean> {
+  const { error } = await supabase
+    .from("customers")
+    .update({ email_verified: true })
+    .eq("id", customerId);
+  return !error;
 }
 
 export async function updateCustomerPassword(params: {
@@ -567,44 +578,86 @@ export async function resetCustomerPassword(customerId: string, newPassword: str
   return !error;
 }
 
-export async function sendPasswordResetEmail(params: {
-  toEmail: string;
+function _emailTemplate(params: {
+  storeColor: string;
+  title: string;
   toName: string;
-  resetUrl: string;
-  storeName: string;
-}): Promise<boolean> {
+  body: string;
+  ctaUrl: string;
+  ctaLabel: string;
+  footer?: string;
+}): string {
+  return `
+    <div style="font-family:sans-serif;max-width:480px;margin:0 auto">
+      <div style="background:${params.storeColor};padding:24px 32px;border-radius:12px 12px 0 0;text-align:center">
+        <img src="https://app.pdvio.com.br/logo-pdvio-light.png" alt="PDVIO" style="height:32px;object-fit:contain" />
+      </div>
+      <div style="background:#fff;padding:32px;border-radius:0 0 12px 12px;border:1px solid #e5e7eb;border-top:none">
+        <h2 style="color:#111;margin:0 0 8px">${params.title}</h2>
+        <p style="color:#444">Olá, <strong>${params.toName}</strong>!</p>
+        <p style="color:#444">${params.body}</p>
+        <p style="margin:32px 0;text-align:center">
+          <a href="${params.ctaUrl}" style="background:${params.storeColor};color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">
+            ${params.ctaLabel}
+          </a>
+        </p>
+        <p style="color:#9ca3af;font-size:12px;margin:0">${params.footer ?? "Se você não solicitou, ignore este e-mail."}</p>
+      </div>
+    </div>`;
+}
+
+async function _sendBrevoEmail(to: { email: string; name: string }, subject: string, htmlContent: string): Promise<boolean> {
   const apiKey = import.meta.env.VITE_BREVO_API_KEY;
   if (!apiKey) { console.error("VITE_BREVO_API_KEY not set"); return false; }
   try {
     const res = await fetch("https://api.brevo.com/v3/smtp/email", {
       method: "POST",
       headers: { "accept": "application/json", "api-key": apiKey, "content-type": "application/json" },
-      body: JSON.stringify({
-        sender: { name: "PDVIO", email: "no-reply@pdvio.com.br" },
-        to: [{ email: params.toEmail, name: params.toName }],
-        subject: `Redefinição de senha — ${params.storeName}`,
-        htmlContent: `
-          <div style="font-family:sans-serif;max-width:480px;margin:0 auto">
-            <div style="background:#18181b;padding:24px 32px;border-radius:12px 12px 0 0;text-align:center">
-              <img src="https://app.pdvio.com.br/logo-pdvio-light.png" alt="PDVIO" style="height:32px;object-fit:contain" />
-            </div>
-            <div style="background:#fff;padding:32px;border-radius:0 0 12px 12px;border:1px solid #e5e7eb;border-top:none">
-              <h2 style="color:#111;margin:0 0 8px">Redefinir sua senha</h2>
-              <p style="color:#444">Olá, <strong>${params.toName}</strong>!</p>
-              <p style="color:#444">Clique no botão abaixo para alterar a senha do seu perfil na <strong>${params.storeName}</strong>.</p>
-              <p style="margin:32px 0;text-align:center">
-                <a href="${params.resetUrl}" style="background:#18181b;color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">
-                  Redefinir senha
-                </a>
-              </p>
-              <p style="color:#9ca3af;font-size:12px;margin:0">Se você não solicitou, ignore este e-mail.</p>
-            </div>
-          </div>`,
-      }),
+      body: JSON.stringify({ sender: { name: "PDVIO", email: "no-reply@pdvio.com.br" }, to: [to], subject, htmlContent }),
     });
     return res.ok;
-  } catch (e) {
-    console.error("sendPasswordResetEmail error:", e);
-    return false;
-  }
+  } catch (e) { console.error("_sendBrevoEmail error:", e); return false; }
+}
+
+export async function sendPasswordResetEmail(params: {
+  toEmail: string;
+  toName: string;
+  resetUrl: string;
+  storeName: string;
+  storeColor: string;
+}): Promise<boolean> {
+  return _sendBrevoEmail(
+    { email: params.toEmail, name: params.toName },
+    `Redefinição de senha — ${params.storeName}`,
+    _emailTemplate({
+      storeColor: params.storeColor,
+      title: "Redefinir sua senha",
+      toName: params.toName,
+      body: `Clique no botão abaixo para alterar a senha do seu perfil na <strong>${params.storeName}</strong>.`,
+      ctaUrl: params.resetUrl,
+      ctaLabel: "Redefinir senha",
+    }),
+  );
+}
+
+export async function sendEmailVerification(params: {
+  toEmail: string;
+  toName: string;
+  verifyUrl: string;
+  storeName: string;
+  storeColor: string;
+}): Promise<boolean> {
+  return _sendBrevoEmail(
+    { email: params.toEmail, name: params.toName },
+    `Confirme seu e-mail — ${params.storeName}`,
+    _emailTemplate({
+      storeColor: params.storeColor,
+      title: "Confirme seu e-mail",
+      toName: params.toName,
+      body: `Clique no botão abaixo para confirmar seu e-mail e ativar sua conta na <strong>${params.storeName}</strong>.`,
+      ctaUrl: params.verifyUrl,
+      ctaLabel: "Confirmar e-mail",
+      footer: "Se você não criou uma conta, ignore este e-mail.",
+    }),
+  );
 }

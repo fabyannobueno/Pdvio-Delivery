@@ -10,6 +10,7 @@ export interface Customer {
   updated_at: string;
   credit_limit?: number;
   password_hash?: string;
+  email_verified?: boolean;
 }
 
 export interface CustomerSession {

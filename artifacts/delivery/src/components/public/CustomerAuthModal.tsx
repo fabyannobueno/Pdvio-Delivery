@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { X, Eye, EyeOff, Loader2, ArrowLeft, CheckCircle } from "lucide-react";
-import { signupCustomer, loginCustomer, findCustomerByEmail, sendPasswordResetEmail } from "@/lib/supabase-service";
+import { X, Eye, EyeOff, Loader2, ArrowLeft, CheckCircle, MailCheck } from "lucide-react";
+import { signupCustomer, loginCustomer, findCustomerByEmail, sendPasswordResetEmail, sendEmailVerification } from "@/lib/supabase-service";
 import type { Company, CustomerSession } from "@/types";
 
 interface CustomerAuthModalProps {
@@ -50,15 +50,25 @@ export const CustomerAuthModal = ({ isOpen, onClose, company, onAuthenticated }:
   const [forgotEmail, setForgotEmail] = useState("");
   const [forgotSent, setForgotSent] = useState(false);
 
+  const [verifyPending, setVerifyPending] = useState<string | null>(null);
+
+  const slug = window.location.pathname.split("/").filter(Boolean)[0] ?? "";
+  const storeColor = primaryColor;
+
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     if (!loginId.trim() || !loginPass) { setError("Preencha todos os campos."); return; }
     setLoading(true);
-    const customer = await loginCustomer({ companyId: company.id, identifier: loginId, password: loginPass });
+    const result = await loginCustomer({ companyId: company.id, identifier: loginId, password: loginPass });
     setLoading(false);
-    if (!customer) { setError("Identificador ou senha incorretos."); return; }
-    onAuthenticated({ id: customer.id, name: customer.name, email: customer.email, phone: customer.phone, companyId: company.id });
+    if (result.unverified) {
+      setError("Verifique seu e-mail antes de entrar. Confira sua caixa de entrada.");
+      return;
+    }
+    if (!result.customer) { setError("Identificador ou senha incorretos."); return; }
+    const c = result.customer;
+    onAuthenticated({ id: c.id, name: c.name, email: c.email, phone: c.phone, companyId: company.id });
   };
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -77,8 +87,23 @@ export const CustomerAuthModal = ({ isOpen, onClose, company, onAuthenticated }:
       phone: signupPhone.trim() || undefined,
       password: signupPass,
     });
+    if (!customer) { setLoading(false); setError("E-mail ou telefone já cadastrado."); return; }
+
+    if (customer.email && customer.email_verified === false) {
+      const verifyUrl = `${window.location.origin}/${slug}/verificar-email?id=${customer.id}`;
+      await sendEmailVerification({
+        toEmail: customer.email,
+        toName: customer.name,
+        verifyUrl,
+        storeName: company.name,
+        storeColor,
+      });
+      setLoading(false);
+      setVerifyPending(customer.email);
+      return;
+    }
+
     setLoading(false);
-    if (!customer) { setError("E-mail ou telefone já cadastrado."); return; }
     onAuthenticated({ id: customer.id, name: customer.name, email: customer.email, phone: customer.phone, companyId: company.id });
   };
 
@@ -88,29 +113,38 @@ export const CustomerAuthModal = ({ isOpen, onClose, company, onAuthenticated }:
     if (!forgotEmail.trim()) { setError("Informe seu e-mail."); return; }
     setLoading(true);
     const customer = await findCustomerByEmail(company.id, forgotEmail);
-    if (!customer) {
-      setLoading(false);
-      setError("Nenhuma conta encontrada com este e-mail.");
-      return;
-    }
-    const slug = window.location.pathname.split("/")[1];
+    if (!customer) { setLoading(false); setError("Nenhuma conta encontrada com este e-mail."); return; }
     const resetUrl = `${window.location.origin}/${slug}/reset-senha?id=${customer.id}`;
     await sendPasswordResetEmail({
       toEmail: customer.email!,
       toName: customer.name,
       resetUrl,
       storeName: company.name,
+      storeColor,
     });
     setLoading(false);
     setForgotSent(true);
   };
 
-  const resetForgot = () => {
-    setForgotView(false);
-    setForgotSent(false);
-    setForgotEmail("");
-    setError("");
-  };
+  const resetForgot = () => { setForgotView(false); setForgotSent(false); setForgotEmail(""); setError(""); };
+
+  const logoEl = company.delivery_logo_url ? (
+    <img src={company.delivery_logo_url} alt={company.name} className="w-9 h-9 rounded-full object-cover shrink-0" />
+  ) : (
+    <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-white font-bold text-sm" style={{ backgroundColor: primaryColor }}>
+      {company.name.charAt(0)}
+    </div>
+  );
+
+  const closeBtn = (
+    <button
+      onClick={onClose}
+      className="rounded-md p-2 transition-colors shrink-0"
+      onMouseEnter={() => setCloseHovered(true)}
+      onMouseLeave={() => setCloseHovered(false)}
+      style={closeHovered ? { color: primaryColor, backgroundColor: `${primaryColor}1a` } : {}}
+    ><X className="w-4 h-4" /></button>
+  );
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
@@ -121,29 +155,29 @@ export const CustomerAuthModal = ({ isOpen, onClose, company, onAuthenticated }:
               <button className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground transition-colors" onClick={resetForgot}>
                 <ArrowLeft className="w-4 h-4" /> Voltar
               </button>
+            ) : verifyPending ? (
+              <span className="text-base font-semibold">Verifique seu e-mail</span>
             ) : (
-              <div className="flex items-center gap-3">
-                {company.delivery_logo_url ? (
-                  <img src={company.delivery_logo_url} alt={company.name} className="w-9 h-9 rounded-full object-cover shrink-0" />
-                ) : (
-                  <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-white font-bold text-sm" style={{ backgroundColor: primaryColor }}>
-                    {company.name.charAt(0)}
-                  </div>
-                )}
-                <span className="font-semibold truncate">{company.name}</span>
-              </div>
+              <div className="flex items-center gap-3">{logoEl}<span className="font-semibold truncate">{company.name}</span></div>
             )}
-            <button
-              onClick={onClose}
-              className="rounded-md p-2 transition-colors shrink-0"
-              onMouseEnter={() => setCloseHovered(true)}
-              onMouseLeave={() => setCloseHovered(false)}
-              style={closeHovered ? { color: primaryColor, backgroundColor: `${primaryColor}1a` } : {}}
-            ><X className="w-4 h-4" /></button>
+            {closeBtn}
           </DialogTitle>
         </DialogHeader>
 
-        {forgotView ? (
+        {verifyPending ? (
+          <div className="flex flex-col items-center gap-4 py-6 text-center">
+            <MailCheck className="w-12 h-12 text-primary" style={{ color: primaryColor }} />
+            <div>
+              <p className="font-medium text-base">Confirme seu e-mail</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                Enviamos um link de confirmação para<br />
+                <strong>{verifyPending}</strong>
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">Clique no link do e-mail para ativar sua conta e entrar.</p>
+            </div>
+            <Button variant="outline" onClick={() => { setVerifyPending(null); setError(""); }}>Voltar ao login</Button>
+          </div>
+        ) : forgotView ? (
           <div className="space-y-4">
             {forgotSent ? (
               <div className="flex flex-col items-center gap-3 py-6 text-center">
@@ -157,14 +191,7 @@ export const CustomerAuthModal = ({ isOpen, onClose, company, onAuthenticated }:
                 <p className="text-sm text-muted-foreground">Informe o e-mail cadastrado e enviaremos um link para redefinir sua senha.</p>
                 <div className="space-y-1">
                   <Label>E-mail</Label>
-                  <Input
-                    type="email"
-                    placeholder="seu@email.com"
-                    value={forgotEmail}
-                    onChange={e => setForgotEmail(e.target.value)}
-                    autoComplete="email"
-                    autoFocus
-                  />
+                  <Input type="email" placeholder="seu@email.com" value={forgotEmail} onChange={e => setForgotEmail(e.target.value)} autoComplete="email" autoFocus />
                 </div>
                 {error && <p className="text-sm text-destructive">{error}</p>}
                 <Button type="submit" className="w-full" disabled={loading}>
@@ -190,10 +217,7 @@ export const CustomerAuthModal = ({ isOpen, onClose, company, onAuthenticated }:
                     value={loginId}
                     inputMode={loginIsPhone ? "numeric" : "email"}
                     autoComplete="username"
-                    onChange={e => {
-                      const v = e.target.value;
-                      setLoginId(looksLikePhone(v) ? maskPhone(v) : v);
-                    }}
+                    onChange={e => { const v = e.target.value; setLoginId(looksLikePhone(v) ? maskPhone(v) : v); }}
                   />
                 </div>
                 <div className="space-y-1">
@@ -210,11 +234,7 @@ export const CustomerAuthModal = ({ isOpen, onClose, company, onAuthenticated }:
                   {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
                   Entrar
                 </Button>
-                <button
-                  type="button"
-                  className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors text-center"
-                  onClick={() => { setError(""); setForgotView(true); }}
-                >
+                <button type="button" className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors text-center" onClick={() => { setError(""); setForgotView(true); }}>
                   Esqueceu a senha?
                 </button>
               </form>
@@ -232,13 +252,7 @@ export const CustomerAuthModal = ({ isOpen, onClose, company, onAuthenticated }:
                 </div>
                 <div className="space-y-1">
                   <Label>Telefone</Label>
-                  <Input
-                    placeholder="(11) 99999-9999"
-                    value={signupPhone}
-                    inputMode="numeric"
-                    autoComplete="tel"
-                    onChange={e => setSignupPhone(maskPhone(e.target.value))}
-                  />
+                  <Input placeholder="(11) 99999-9999" value={signupPhone} inputMode="numeric" autoComplete="tel" onChange={e => setSignupPhone(maskPhone(e.target.value))} />
                 </div>
                 <div className="space-y-1">
                   <Label>Senha</Label>
