@@ -61,6 +61,10 @@ export const OrderTrackingPage = () => {
   const [comandaConfirmed, setComandaConfirmed] = useState(false);
 
   useEffect(() => {
+    window.scrollTo({ top: 0, behavior: "instant" });
+  }, []);
+
+  useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(t);
   }, []);
