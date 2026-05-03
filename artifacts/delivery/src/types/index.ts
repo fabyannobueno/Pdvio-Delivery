@@ -54,6 +54,7 @@ export interface Product {
   category?: string;
   sale_price: number;
   stock_unit: string;
+  stock_quantity?: number;
   is_active: boolean;
   is_promotion: boolean;
   promotion_price?: number;

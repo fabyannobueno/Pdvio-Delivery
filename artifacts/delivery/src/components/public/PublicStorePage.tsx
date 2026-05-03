@@ -507,11 +507,15 @@ export const PublicStorePage = () => {
                       {prods.map(product => {
                         const price = getEffectivePrice(product);
                         const inPromo = isPromotionActive(product);
+                        const outOfStock = product.stock_quantity !== undefined && product.stock_quantity !== null && product.stock_quantity <= 0;
+                        const discountPct = inPromo && product.promotion_price
+                          ? Math.round(((product.sale_price - product.promotion_price) / product.sale_price) * 100)
+                          : 0;
                         return (
                           <Card
                             key={product.id}
-                            className="cursor-pointer hover:shadow-md transition-shadow flex-shrink-0 md:w-56 w-full overflow-hidden"
-                            onClick={() => handleProductClick(product)}
+                            className={`transition-shadow flex-shrink-0 md:w-56 w-full overflow-hidden ${outOfStock ? "opacity-60 cursor-not-allowed" : "cursor-pointer hover:shadow-md"}`}
+                            onClick={() => !outOfStock && handleProductClick(product)}
                           >
                             {/* Mobile: horizontal | Desktop: vertical */}
                             <div className="flex flex-row md:flex-col">
@@ -527,8 +531,11 @@ export const PublicStorePage = () => {
                                     <span className="text-2xl md:text-3xl font-bold text-muted-foreground">{product.name.charAt(0)}</span>
                                   </div>
                                 )}
-                                {inPromo && (
-                                  <Badge className="absolute top-2 right-2 bg-red-500 text-white text-xs">PROMO</Badge>
+                                {outOfStock && (
+                                  <Badge className="absolute top-2 left-2 bg-gray-600 text-white text-xs">Esgotado</Badge>
+                                )}
+                                {!outOfStock && inPromo && discountPct > 0 && (
+                                  <Badge className="absolute top-2 right-2 bg-red-500 text-white text-xs">-{discountPct}%</Badge>
                                 )}
                               </div>
                               <CardContent className="p-3 flex flex-col justify-center min-w-0">

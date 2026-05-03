@@ -45,6 +45,7 @@ export const ProductDetailModal = ({ isOpen, onClose, product, onAddToCart, isSt
   const discountPct = inPromo && product.promotion_price
     ? Math.round(((originalPrice - product.promotion_price) / originalPrice) * 100)
     : 0;
+  const outOfStock = product.stock_quantity !== undefined && product.stock_quantity !== null && product.stock_quantity <= 0;
 
   const handleAddonToggle = (addon: ProductAddon) => {
     setSelectedAddons(prev => {
@@ -161,7 +162,13 @@ export const ProductDetailModal = ({ isOpen, onClose, product, onAddToCart, isSt
           )}
 
           <div className="border-t border-border pt-4">
-            {!isStoreOpen && (
+            {outOfStock && (
+              <div className="flex items-center space-x-2 text-gray-500 mb-4">
+                <span className="w-4 h-4 text-lg leading-none">⊘</span>
+                <span className="text-sm font-medium">Produto esgotado — sem estoque disponível</span>
+              </div>
+            )}
+            {!outOfStock && !isStoreOpen && (
               <div className="flex items-center space-x-2 text-yellow-600 mb-4">
                 <Clock className="w-4 h-4" />
                 <span className="text-sm">Loja fechada — não é possível fazer pedidos</span>
@@ -172,8 +179,8 @@ export const ProductDetailModal = ({ isOpen, onClose, product, onAddToCart, isSt
               <span className="text-lg font-semibold text-foreground">Total</span>
               <span className="text-2xl font-bold text-foreground">R$ {calculateTotal().toFixed(2).replace(".", ",")}</span>
             </div>
-            <Button className="w-full" onClick={handleAddToCart} disabled={!isStoreOpen}>
-              Adicionar ao Carrinho
+            <Button className="w-full" onClick={handleAddToCart} disabled={!isStoreOpen || outOfStock}>
+              {outOfStock ? "Produto Esgotado" : "Adicionar ao Carrinho"}
             </Button>
           </div>
         </div>
