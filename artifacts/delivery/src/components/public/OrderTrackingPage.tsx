@@ -232,7 +232,7 @@ export const OrderTrackingPage = () => {
       <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
 
         {/* Comanda confirmada — dine_in */}
-        {isDineIn && comandaConfirmed && (
+        {isDineIn && comandaConfirmed && !isFinalStatus && (
           <div className="rounded-xl border border-green-300 bg-green-50 p-4 flex items-start gap-3">
             <CheckCircle2 className="w-6 h-6 text-green-600 shrink-0 mt-0.5" />
             <div>
