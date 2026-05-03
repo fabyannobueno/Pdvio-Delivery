@@ -51,9 +51,9 @@ export const MyOrdersModal = ({ isOpen, onClose, company }: MyOrdersModalProps) 
           )
         `)
         .eq("company_id", company.id)
-        .ilike("notes", `%${cleanPhone}%`)
+        .eq("customer_phone", cleanPhone)
         .order("created_at", { ascending: false })
-        .limit(10);
+        .limit(20);
 
       if (error) {
         console.error("Error searching orders:", error);
