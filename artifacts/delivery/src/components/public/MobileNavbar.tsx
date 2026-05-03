@@ -52,12 +52,12 @@ export const MobileNavbar = ({ company, cartItemCount, onShowCart, onShowOrders,
                 <Menu className="w-5 h-5" />
               </Button>
             </SheetTrigger>
-            <SheetContent side="right" className="w-80 p-0">
-              <SheetHeader className="p-6 pb-4 border-b border-border">
+            <SheetContent side="right" className="w-80 p-0 flex flex-col">
+              <SheetHeader className="p-6 pb-4 border-b border-border shrink-0">
                 <SheetTitle className="text-left">Menu</SheetTitle>
               </SheetHeader>
-              <div className="p-6 flex flex-col h-full">
-                <nav className="space-y-2 flex-1">
+              <div className="flex-1 overflow-y-auto flex flex-col">
+                <nav className="p-6 pb-4 space-y-2">
                   {menuItems.map((item, index) => {
                     const Icon = item.icon;
                     return (
@@ -74,7 +74,7 @@ export const MobileNavbar = ({ company, cartItemCount, onShowCart, onShowOrders,
                   })}
                 </nav>
 
-                <div className="border-t border-border pt-4 space-y-2">
+                <div className="mt-auto border-t border-border px-6 py-4 space-y-2">
                   {customer ? (
                     <>
                       <button type="button" onClick={() => { onShowProfile(); setIsOpen(false); }} className="w-full flex items-center gap-3 px-4 py-2 rounded-md hover:bg-muted transition-colors group text-left">
