@@ -51,7 +51,7 @@ export const MyOrdersModal = ({ isOpen, onClose, company }: MyOrdersModalProps) 
         .from("delivery_orders")
         .select("*")
         .eq("company_id", company.id)
-        .eq("customer_phone", cleanPhone)
+        .in("customer_phone", [phone, cleanPhone])
         .order("created_at", { ascending: false })
         .limit(20);
 
