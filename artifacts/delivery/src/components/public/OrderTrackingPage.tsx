@@ -320,10 +320,21 @@ export const OrderTrackingPage = () => {
           </div>
         )}
 
-        <Button variant="outline" className="w-full" onClick={() => { window.scrollTo({ top: 0, behavior: "instant" }); navigate(`/${slug}`); }}>
-          <ArrowLeft className="w-4 h-4 mr-2" /> Voltar à loja
-        </Button>
       </div>
+
+      {/* Footer */}
+      <footer className="border-t mt-4 py-6 flex flex-col items-center gap-2">
+        <p className="text-xs text-muted-foreground">
+          © {new Date().getFullYear()} {company?.name ?? slug}. Todos os direitos reservados.
+        </p>
+        <div className="flex flex-col items-center gap-1">
+          <span className="text-xs text-muted-foreground">Powered by</span>
+          <a href="https://www.pdvio.com.br/" target="_blank" rel="noopener noreferrer"
+            className="opacity-80 hover:opacity-100 transition-opacity">
+            <img src="/logo.png" alt="PDVIO" className="h-6 object-contain" />
+          </a>
+        </div>
+      </footer>
     </div>
   );
 };
