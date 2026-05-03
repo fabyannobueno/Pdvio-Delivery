@@ -279,7 +279,7 @@ export const PublicStorePage = () => {
             <div className="absolute inset-0 bg-black/30" />
             <div className="absolute bottom-4 left-6 flex items-center space-x-4">
               {company.delivery_logo_url && (
-                <img src={company.delivery_logo_url} alt={company.name} className="w-16 h-16 rounded-full border-4 border-white object-cover shadow-lg" />
+                <img src={company.delivery_logo_url} alt={company.name} className="w-16 h-16 rounded-full border-4 border-white object-cover shadow-lg bg-white" />
               )}
               <div>
                 <h1 className="text-2xl font-bold text-white drop-shadow">{company.name}</h1>
