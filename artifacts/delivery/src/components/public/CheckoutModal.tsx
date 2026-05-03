@@ -41,7 +41,12 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
   const [customerData, setCustomerData] = useState({ name: "", phone: "", cep: "", street: "", number: "", neighborhood: "", city: "", state: "" });
   const [orderNotes, setOrderNotes] = useState("");
   const [loading, setLoading] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>("pix");
+  const availablePayments = PAYMENT_METHODS.filter(pm =>
+    !company.payment_settings?.enabled?.length ||
+    company.payment_settings.enabled.includes(pm.id)
+  );
+  const defaultPayment = (availablePayments.find(p => p.id === "pix") ?? availablePayments[0])?.id as PaymentMethod ?? "pix";
+  const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>(defaultPayment);
 
   useEffect(() => {
     if (isMesaMode) setDeliveryType("dine_in");
@@ -279,7 +284,7 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
             <Label className="text-base font-semibold mb-3 block">Forma de Pagamento</Label>
             <RadioGroup value={selectedPayment} onValueChange={v => setSelectedPayment(v as PaymentMethod)}>
               <div className="space-y-2">
-                {PAYMENT_METHODS.map(pm => {
+                {availablePayments.map(pm => {
                   const Icon = pm.icon;
                   return (
                     <div key={pm.id} className={`flex items-center space-x-3 p-3 rounded-lg border-2 cursor-pointer transition-colors ${selectedPayment === pm.id ? "border-primary bg-primary/5" : "border-border"}`} onClick={() => setSelectedPayment(pm.id)}>
