@@ -163,7 +163,7 @@ export const OrderTrackingPage = () => {
       {/* Header */}
       <div className="bg-primary text-primary-foreground px-4 py-4 flex items-center gap-3">
         <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/20 shrink-0"
-          onClick={() => navigate(`/${slug}`)}>
+          onClick={() => { window.scrollTo({ top: 0, behavior: "instant" }); navigate(`/${slug}`); }}>
           <ArrowLeft className="w-5 h-5" />
         </Button>
         {company?.delivery_logo_url && (
@@ -320,7 +320,7 @@ export const OrderTrackingPage = () => {
           </div>
         )}
 
-        <Button variant="outline" className="w-full" onClick={() => navigate(`/${slug}`)}>
+        <Button variant="outline" className="w-full" onClick={() => { window.scrollTo({ top: 0, behavior: "instant" }); navigate(`/${slug}`); }}>
           <ArrowLeft className="w-4 h-4 mr-2" /> Voltar à loja
         </Button>
       </div>
