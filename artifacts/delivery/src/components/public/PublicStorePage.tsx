@@ -323,12 +323,16 @@ export const PublicStorePage = () => {
             {[...Array(2)].map((_, ci) => (
               <div key={ci} className="space-y-3">
                 <Skeleton className="h-6 w-32 rounded" />
-                <div className="grid grid-cols-2 md:flex md:flex-row gap-4">
+                {/* Mobile: single column, horizontal cards | Desktop: horizontal scroll row */}
+                <div className="grid grid-cols-1 gap-4 md:flex md:flex-row md:overflow-hidden">
                   {[...Array(4)].map((_, i) => (
-                    <div key={i} className="md:w-56 shrink-0 space-y-2">
-                      <Skeleton className="w-full h-36 md:w-56 md:h-40 rounded-lg" />
-                      <Skeleton className="h-4 w-3/4 rounded" />
-                      <Skeleton className="h-4 w-1/2 rounded" />
+                    <div key={i} className="md:w-56 md:shrink-0 w-full rounded-lg border overflow-hidden flex flex-row md:flex-col">
+                      <Skeleton className="w-24 h-24 shrink-0 md:w-56 md:h-40 rounded-none" />
+                      <div className="flex-1 p-3 space-y-2 flex flex-col justify-center">
+                        <Skeleton className="h-4 w-3/4 rounded" />
+                        <Skeleton className="h-3 w-full rounded" />
+                        <Skeleton className="h-4 w-1/3 rounded" />
+                      </div>
                     </div>
                   ))}
                 </div>
