@@ -36,6 +36,7 @@ export interface CustomerSession {
   address_city?: string;
   address_state?: string;
   avatar_url?: string;
+  document?: string;
 }
 
 export interface OperatingHour {
