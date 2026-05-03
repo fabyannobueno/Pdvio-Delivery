@@ -269,7 +269,10 @@ export const OrderTrackingPage = () => {
               const done = idx < currentIdx;
               const active = idx === currentIdx;
               const pending = idx > currentIdx;
-              const isLast = idx === steps.length - 1;
+              const visibleSteps = steps.filter((_, i) => i <= currentIdx);
+              const isLast = idx === visibleSteps.length - 1;
+
+              if (pending) return null;
 
               return (
                 <div key={step.key} className="flex gap-3">
@@ -277,22 +280,19 @@ export const OrderTrackingPage = () => {
                     <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all
                       ${active ? `${step.bg} ${step.color} ring-2 ring-current ring-offset-1` : ""}
                       ${done ? "bg-green-100 text-green-500" : ""}
-                      ${pending ? "bg-muted text-muted-foreground/40" : ""}
                     `}>
                       {done ? <CheckCircle2 className="w-5 h-5" /> : <Icon className={`w-5 h-5 ${active ? "animate-pulse" : ""}`} />}
                     </div>
                     {!isLast && (
-                      <div className={`w-0.5 h-8 mt-1 rounded-full ${done ? "bg-green-400" : "bg-border"}`} />
+                      <div className="w-0.5 h-8 mt-1 rounded-full bg-green-400" />
                     )}
                   </div>
 
                   <div className={`pb-6 min-w-0 ${isLast ? "pb-0" : ""}`}>
-                    <p className={`font-medium text-sm leading-tight ${pending ? "text-muted-foreground/60" : ""} ${active ? step.color : ""}`}>
+                    <p className={`font-medium text-sm leading-tight ${active ? step.color : "text-foreground"}`}>
                       {step.label}
                     </p>
-                    {(active || done) && (
-                      <p className="text-xs text-muted-foreground mt-0.5">{step.description}</p>
-                    )}
+                    <p className="text-xs text-muted-foreground mt-0.5">{step.description}</p>
                   </div>
                 </div>
               );
