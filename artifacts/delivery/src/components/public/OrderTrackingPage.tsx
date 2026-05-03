@@ -171,31 +171,23 @@ export const OrderTrackingPage = () => {
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
-      <div className="bg-primary text-primary-foreground px-4 pt-3 pb-4">
-        <div className="flex items-center gap-2 mb-3">
-          <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/20 shrink-0 -ml-2"
-            onClick={() => { window.scrollTo({ top: 0, behavior: "instant" }); navigate(`/${slug}`); }}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <p className="text-xs opacity-70 ml-auto">
-            {now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+      <div className="bg-primary text-primary-foreground px-4 py-4 flex items-center gap-3">
+        <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/20 shrink-0"
+          onClick={() => { window.scrollTo({ top: 0, behavior: "instant" }); navigate(`/${slug}`); }}>
+          <ArrowLeft className="w-5 h-5" />
+        </Button>
+        {company?.delivery_logo_url && (
+          <img src={company.delivery_logo_url} alt={company.name}
+            className="w-8 h-8 rounded-full object-cover shrink-0 bg-white" />
+        )}
+        <div className="min-w-0">
+          <p className="font-semibold truncate">{company?.name ?? slug}</p>
+          <p className="text-xs opacity-80">
+            Pedido #{order.numeric_id ?? orderId.slice(0, 8).toUpperCase()}
           </p>
         </div>
-        <div className="flex items-center gap-3">
-          {company?.delivery_logo_url ? (
-            <img src={company.delivery_logo_url} alt={company.name}
-              className="w-14 h-14 rounded-full object-cover shrink-0 border-2 border-white/40 bg-white" />
-          ) : (
-            <div className="w-14 h-14 rounded-full bg-white/20 border-2 border-white/40 flex items-center justify-center shrink-0">
-              <span className="text-white text-2xl font-bold">{company?.name?.charAt(0) ?? "?"}</span>
-            </div>
-          )}
-          <div className="min-w-0">
-            <h1 className="text-xl font-bold truncate drop-shadow">{company?.name ?? slug}</h1>
-            <p className="text-xs opacity-80 mt-0.5">
-              Pedido #{order.numeric_id ?? orderId.slice(0, 8).toUpperCase()}
-            </p>
-          </div>
+        <div className="ml-auto text-xs opacity-80 shrink-0">
+          {now.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
         </div>
       </div>
 
