@@ -21,6 +21,8 @@ export const ChangePasswordModal = ({ isOpen, onClose, company, session }: Chang
   const [error, setError] = useState("");
   const [success, setSuccess] = useState(false);
   const [showPass, setShowPass] = useState(false);
+  const [showNext, setShowNext] = useState(false);
+  const [showConfirm, setShowConfirm] = useState(false);
 
   const [current, setCurrent] = useState("");
   const [next, setNext] = useState("");
@@ -75,11 +77,21 @@ export const ChangePasswordModal = ({ isOpen, onClose, company, session }: Chang
             </div>
             <div className="space-y-1">
               <Label>Nova senha</Label>
-              <Input type={showPass ? "text" : "password"} placeholder="Mínimo 6 caracteres" value={next} onChange={e => setNext(e.target.value)} />
+              <div className="relative">
+                <Input type={showNext ? "text" : "password"} placeholder="Mínimo 6 caracteres" value={next} onChange={e => setNext(e.target.value)} className="pr-10" />
+                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" onClick={() => setShowNext(v => !v)}>
+                  {showNext ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
             <div className="space-y-1">
               <Label>Confirmar nova senha</Label>
-              <Input type={showPass ? "text" : "password"} placeholder="Repita a nova senha" value={confirm} onChange={e => setConfirm(e.target.value)} />
+              <div className="relative">
+                <Input type={showConfirm ? "text" : "password"} placeholder="Repita a nova senha" value={confirm} onChange={e => setConfirm(e.target.value)} className="pr-10" />
+                <button type="button" className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground" onClick={() => setShowConfirm(v => !v)}>
+                  {showConfirm ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
             </div>
             {error && <p className="text-sm text-destructive">{error}</p>}
             <Button type="submit" className="w-full" disabled={loading}>
