@@ -6,7 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Loader2, Package, Search, Phone, X } from "lucide-react";
 import { supabase } from "@/lib/supabase";
-import type { Company, Sale } from "@/types";
+import type { Company, DeliveryOrder } from "@/types";
 
 interface MyOrdersModalProps {
   isOpen: boolean;
@@ -15,14 +15,19 @@ interface MyOrdersModalProps {
 }
 
 const STATUS_MAP: Record<string, { label: string; color: string }> = {
-  completed: { label: "Concluído", color: "bg-green-500" },
-  cancelled: { label: "Cancelado", color: "bg-red-500" },
-  refunded: { label: "Reembolsado", color: "bg-orange-500" },
+  pending:            { label: "Aguardando",      color: "bg-yellow-500" },
+  confirmed:          { label: "Confirmado",       color: "bg-blue-500" },
+  preparing:          { label: "Preparando",       color: "bg-orange-500" },
+  out_for_delivery:   { label: "Saiu p/ entrega",  color: "bg-purple-500" },
+  delivered:          { label: "Entregue",         color: "bg-green-500" },
+  ready_for_pickup:   { label: "Pronto p/ retirar",color: "bg-teal-500" },
+  picked_up:          { label: "Retirado",         color: "bg-green-600" },
+  cancelled:          { label: "Cancelado",        color: "bg-red-500" },
 };
 
 export const MyOrdersModal = ({ isOpen, onClose, company }: MyOrdersModalProps) => {
   const [phone, setPhone] = useState("");
-  const [orders, setOrders] = useState<Sale[]>([]);
+  const [orders, setOrders] = useState<DeliveryOrder[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [closeHovered, setCloseHovered] = useState(false);
@@ -43,13 +48,8 @@ export const MyOrdersModal = ({ isOpen, onClose, company }: MyOrdersModalProps) 
       const cleanPhone = phone.replace(/\D/g, "");
 
       const { data, error } = await supabase
-        .from("sales")
-        .select(`
-          *,
-          sale_items (
-            id, product_name, quantity, unit_price, subtotal, addons
-          )
-        `)
+        .from("delivery_orders")
+        .select("*")
         .eq("company_id", company.id)
         .eq("customer_phone", cleanPhone)
         .order("created_at", { ascending: false })
@@ -59,7 +59,7 @@ export const MyOrdersModal = ({ isOpen, onClose, company }: MyOrdersModalProps) 
         console.error("Error searching orders:", error);
         setOrders([]);
       } else {
-        setOrders((data || []) as Sale[]);
+        setOrders((data || []) as DeliveryOrder[]);
       }
     } catch (err) {
       console.error("Error:", err);
@@ -155,10 +155,10 @@ export const MyOrdersModal = ({ isOpen, onClose, company }: MyOrdersModalProps) 
                           <Separator className="my-3" />
 
                           <div className="space-y-1 mb-3">
-                            {order.sale_items?.map((item, i) => (
+                            {order.items?.map((item, i) => (
                               <div key={i} className="flex justify-between text-sm">
-                                <span>{item.quantity}x {item.product_name}</span>
-                                <span>R$ {item.subtotal.toFixed(2).replace(".", ",")}</span>
+                                <span>{item.quantity}x {item.name}</span>
+                                <span>R$ {((item.price * item.quantity)).toFixed(2).replace(".", ",")}</span>
                               </div>
                             ))}
                           </div>
