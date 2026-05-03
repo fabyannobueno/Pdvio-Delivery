@@ -138,11 +138,22 @@ export const PublicStorePage = () => {
     return () => { supabase.removeChannel(channel); };
   }, [company?.id]);
 
-  // Tick every 60s to re-evaluate store open status based on current time
+  // Poll company + products every 15s — fallback when Realtime replication isn't enabled
   useEffect(() => {
-    const interval = setInterval(() => setCompany(prev => prev ? { ...prev } : prev), 60_000);
+    if (!company?.id) return;
+    const interval = setInterval(async () => {
+      const [co, prods] = await Promise.all([
+        getCompanyBySlug(slug!),
+        getProductsByCompanyId(company.id),
+      ]);
+      if (co) {
+        setCompany(co);
+        applyThemeColor(co.delivery_primary_color || "#6d28d9");
+      }
+      if (prods) setProducts(prods);
+    }, 15_000);
     return () => clearInterval(interval);
-  }, []);
+  }, [company?.id, slug]);
 
   useEffect(() => {
     let filtered = products;
