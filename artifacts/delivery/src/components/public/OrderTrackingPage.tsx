@@ -298,7 +298,7 @@ export const OrderTrackingPage = () => {
                     `}>
                       {step.label}
                     </p>
-                    {(done || active) && (
+                    {active && (
                       <p className="text-xs text-muted-foreground mt-0.5">{step.description}</p>
                     )}
                   </div>
