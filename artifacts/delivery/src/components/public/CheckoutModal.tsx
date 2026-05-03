@@ -8,9 +8,10 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { X, Truck, Home, UtensilsCrossed, CreditCard, Smartphone, DollarSign, Receipt, Loader2 } from "lucide-react";
+import { X, Truck, Home, UtensilsCrossed, CreditCard, Smartphone, DollarSign, Receipt, Loader2, Tag, CheckCircle, XCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { createDeliveryOrder, sendWhatsAppOrder, generateOrderWhatsAppMessage, formatCurrency, updateCustomerAddress } from "@/lib/supabase-service";
+import { createDeliveryOrder, sendWhatsAppOrder, generateOrderWhatsAppMessage, formatCurrency, updateCustomerAddress, validateCoupon, consumeCoupon } from "@/lib/supabase-service";
+import { applyPromotions, type Promotion, type Coupon, type CartLineInput } from "@/lib/promotions-engine";
 import type { Company, CartItem, PaymentMethod, DeliveryType, MesaParams } from "@/types";
 
 interface CheckoutModalProps {
@@ -20,7 +21,8 @@ interface CheckoutModalProps {
   setCart: (cart: CartItem[]) => void;
   company: Company;
   mesaParams?: MesaParams;
-  customer?: { name: string; phone?: string | null; email?: string | null } | null;
+  customer?: { id?: string; name: string; phone?: string | null; email?: string | null; address_cep?: string; address_street?: string; address_number?: string; address_complement?: string; address_neighborhood?: string; address_city?: string; address_state?: string } | null;
+  promotions?: Promotion[];
 }
 
 const PAYMENT_METHODS = [
@@ -31,7 +33,7 @@ const PAYMENT_METHODS = [
   { id: "ticket" as PaymentMethod, name: "Vale Refeição", icon: Receipt, description: "VR, VA, Sodexo, etc." },
 ];
 
-export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaParams, customer }: CheckoutModalProps) => {
+export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaParams, customer, promotions = [] }: CheckoutModalProps) => {
   const { toast } = useToast();
   const [, navigate] = useLocation();
   const primaryColor = company.delivery_primary_color || "#6d28d9";
@@ -44,17 +46,30 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
   const [customerData, setCustomerData] = useState({ name: "", phone: "", cep: "", street: "", number: "", complement: "", neighborhood: "", city: "", state: "" });
   const [orderNotes, setOrderNotes] = useState("");
   const [loading, setLoading] = useState(false);
-  const availablePayments = PAYMENT_METHODS.filter(pm =>
-    company.payment_settings?.enabled?.includes(pm.id)
-  );
+  const availablePayments = PAYMENT_METHODS.filter(pm => company.payment_settings?.enabled?.includes(pm.id));
   const defaultPayment = (availablePayments.find(p => p.id === "pix") ?? availablePayments[0])?.id as PaymentMethod ?? "pix";
   const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>(defaultPayment);
   const [needsChange, setNeedsChange] = useState(false);
   const [changeFor, setChangeFor] = useState("");
 
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<Coupon | null>(null);
+  const [couponDiscount, setCouponDiscount] = useState(0);
+  const [couponError, setCouponError] = useState("");
+  const [couponLoading, setCouponLoading] = useState(false);
+
   useEffect(() => {
     if (isMesaMode) setDeliveryType("dine_in");
   }, [isMesaMode, isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setCouponCode("");
+      setAppliedCoupon(null);
+      setCouponDiscount(0);
+      setCouponError("");
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     const saved = localStorage.getItem(`customer_${company.id}`);
@@ -78,10 +93,30 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
     }
   }, [customerData, company.id]);
 
+  // Promotions engine
+  const cartLines: CartLineInput[] = cart.map(item => ({
+    productId: item.productId,
+    category: item.category ?? null,
+    basePrice: item.price,
+    quantity: item.weight ?? item.quantity,
+  }));
+  const promoResult = applyPromotions(cartLines, promotions);
+  const promotionDiscount = promoResult.totalDiscount;
+
   const subtotal = cart.reduce((t, i) => t + i.totalPrice, 0);
-  const freeDelivery = company.delivery_free_threshold && subtotal >= company.delivery_free_threshold;
+  const subtotalAfterPromo = Math.max(0, subtotal - promotionDiscount);
+  const freeDelivery = company.delivery_free_threshold && subtotalAfterPromo >= company.delivery_free_threshold;
   const deliveryFee = deliveryType === "delivery" ? (freeDelivery ? 0 : (company.delivery_fee || 0)) : 0;
-  const total = subtotal + deliveryFee;
+  const total = Math.max(0, subtotalAfterPromo - couponDiscount + deliveryFee);
+
+  // Re-validate coupon when subtotal changes (in case discount drops below min_purchase)
+  useEffect(() => {
+    if (appliedCoupon && subtotalAfterPromo < Number(appliedCoupon.min_purchase ?? 0)) {
+      setAppliedCoupon(null);
+      setCouponDiscount(0);
+      setCouponError(`Compra mínima de ${Number(appliedCoupon.min_purchase || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} para usar este cupom.`);
+    }
+  }, [subtotalAfterPromo]);
 
   const searchCep = async (cep: string) => {
     const cleaned = cep.replace(/\D/g, "");
@@ -109,15 +144,10 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
   const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const numbers = e.target.value.replace(/\D/g, "").slice(0, 11);
     let formatted = numbers;
-    if (numbers.length > 10) {
-      formatted = numbers.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
-    } else if (numbers.length > 6) {
-      formatted = numbers.replace(/(\d{2})(\d{4,5})(\d{0,4})/, "($1) $2-$3");
-    } else if (numbers.length > 2) {
-      formatted = numbers.replace(/(\d{2})(\d+)/, "($1) $2");
-    } else if (numbers.length > 0) {
-      formatted = `(${numbers}`;
-    }
+    if (numbers.length > 10) formatted = numbers.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
+    else if (numbers.length > 6) formatted = numbers.replace(/(\d{2})(\d{4,5})(\d{0,4})/, "($1) $2-$3");
+    else if (numbers.length > 2) formatted = numbers.replace(/(\d{2})(\d+)/, "($1) $2");
+    else if (numbers.length > 0) formatted = `(${numbers}`;
     setCustomerData(prev => ({ ...prev, phone: formatted }));
   };
 
@@ -135,6 +165,30 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
   const buildAddress = () => {
     const parts = [customerData.street, customerData.number, customerData.complement, customerData.neighborhood, customerData.city, customerData.state].filter(Boolean);
     return parts.join(", ");
+  };
+
+  const handleValidateCoupon = async () => {
+    setCouponError("");
+    if (!couponCode.trim()) return;
+    setCouponLoading(true);
+    const result = await validateCoupon(couponCode, subtotalAfterPromo, company.id, customer?.id ?? null);
+    setCouponLoading(false);
+    if (result.ok && result.coupon) {
+      setAppliedCoupon(result.coupon);
+      setCouponDiscount(result.discount!);
+      setCouponError("");
+    } else {
+      setAppliedCoupon(null);
+      setCouponDiscount(0);
+      setCouponError(result.error ?? "Cupom inválido.");
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponDiscount(0);
+    setCouponCode("");
+    setCouponError("");
   };
 
   const canCheckout = () => {
@@ -161,7 +215,6 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
         ? `Troco para: ${changeFor} (troco: ${(parseChangeFor() - total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })})`
         : null;
       const fullNotes = [orderNotes, changeNote].filter(Boolean).join(" | ");
-
       const changeForVal = selectedPayment === "cash" && needsChange ? parseChangeFor() : undefined;
       const changeAmountVal = changeForVal ? parseFloat((changeForVal - total).toFixed(2)) : undefined;
 
@@ -179,32 +232,33 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
         changeFor: changeForVal,
         changeAmount: changeAmountVal,
         comandaId: mesaParams?.comanda,
+        promotionDiscount: promotionDiscount > 0 ? promotionDiscount : undefined,
+        couponId: appliedCoupon?.id,
+        couponCode: appliedCoupon?.code,
+        couponDiscount: couponDiscount > 0 ? couponDiscount : undefined,
       });
 
       if (!sale) throw new Error("Erro ao criar pedido");
 
+      if (appliedCoupon && couponDiscount > 0) {
+        consumeCoupon(appliedCoupon, {
+          companyId: company.id,
+          customerId: customer?.id,
+          customerName: customerData.name,
+          orderId: sale.id,
+          discountAmount: couponDiscount,
+        }).catch(console.warn);
+      }
+
       if (deliveryType !== "dine_in") {
         const orderId = sale.numeric_id ?? sale.id;
         const trackingUrl = `${window.location.origin}/${company.delivery_slug}/pedido/${orderId}`;
-
         const message = generateOrderWhatsAppMessage({
-          company,
-          items: cart,
-          total,
-          deliveryFee,
-          paymentMethod: selectedPayment,
-          deliveryType,
-          customerName: customerData.name,
-          customerPhone: customerData.phone,
-          address,
-          notes: orderNotes,
-          changeNote: changeNote ?? undefined,
-          trackingUrl,
+          company, items: cart, total, deliveryFee, paymentMethod: selectedPayment,
+          deliveryType, customerName: customerData.name, customerPhone: customerData.phone,
+          address, notes: orderNotes, changeNote: changeNote ?? undefined, trackingUrl,
         });
-
-        if (company.wapi_instance_id) {
-          await sendWhatsAppOrder(company, message, customerData.phone);
-        }
+        if (company.wapi_instance_id) await sendWhatsAppOrder(company, message, customerData.phone);
       }
 
       if (customer?.id && deliveryType === "delivery") {
@@ -266,14 +320,10 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
               {deliveryOptions.map(opt => {
                 const Icon = opt.icon;
                 return (
-                  <button
-                    key={opt.value}
-                    type="button"
+                  <button key={opt.value} type="button"
                     onClick={() => !isMesaMode && setDeliveryType(opt.value)}
                     disabled={isMesaMode}
-                    className={`flex flex-col items-center p-4 rounded-lg border-2 transition-colors ${
-                      deliveryType === opt.value ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
-                    } ${isMesaMode ? "cursor-default" : ""}`}
+                    className={`flex flex-col items-center p-4 rounded-lg border-2 transition-colors ${deliveryType === opt.value ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"} ${isMesaMode ? "cursor-default" : ""}`}
                   >
                     <Icon className="w-6 h-6 mb-2" />
                     <span className="font-medium">{opt.label}</span>
@@ -356,14 +406,12 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
             </RadioGroup>
           </div>
 
-          {/* Troco (apenas dinheiro) */}
+          {/* Troco */}
           {selectedPayment === "cash" && (
             <div className="space-y-3 rounded-lg border p-3 bg-muted/30">
               <div className="flex items-center justify-between">
                 <Label className="font-medium">Precisa de troco?</Label>
-                <button
-                  type="button"
-                  onClick={() => { setNeedsChange(v => !v); setChangeFor(""); }}
+                <button type="button" onClick={() => { setNeedsChange(v => !v); setChangeFor(""); }}
                   className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none ${needsChange ? "bg-primary" : "bg-muted-foreground/30"}`}
                 >
                   <span className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${needsChange ? "translate-x-6" : "translate-x-1"}`} />
@@ -372,22 +420,52 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
               {needsChange && (
                 <div className="space-y-1">
                   <Label htmlFor="change-for" className="text-sm font-medium block">Troco para quanto? <span className="text-destructive">*</span></Label>
-                  <Input
-                    id="change-for"
-                    placeholder="R$ 0,00"
-                    inputMode="numeric"
-                    value={changeFor}
-                    onChange={handleChangeForInput}
-                    className={parseChangeFor() > 0 && parseChangeFor() < total ? "border-destructive focus-visible:ring-destructive" : ""}
-                  />
+                  <Input id="change-for" placeholder="R$ 0,00" inputMode="numeric" value={changeFor} onChange={handleChangeForInput}
+                    className={parseChangeFor() > 0 && parseChangeFor() < total ? "border-destructive focus-visible:ring-destructive" : ""} />
                   {parseChangeFor() > 0 && parseChangeFor() < total && (
-                    <p className="text-xs text-destructive">O valor deve ser maior ou igual ao total do pedido ({total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}).</p>
+                    <p className="text-xs text-destructive">O valor deve ser maior ou igual ao total ({total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}).</p>
                   )}
                   {parseChangeFor() >= total && parseChangeFor() > 0 && (
-                    <p className="text-xs text-green-600 font-medium">Troco a devolver: {(parseChangeFor() - total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
+                    <p className="text-xs text-green-600 font-medium">Troco: {(parseChangeFor() - total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
                   )}
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Cupom */}
+          {!isMesaMode && (
+            <div className="space-y-2">
+              <Label className="text-base font-semibold flex items-center gap-2"><Tag className="w-4 h-4" /> Cupom de Desconto</Label>
+              {appliedCoupon ? (
+                <div className="flex items-center gap-2 rounded-lg border border-green-300 bg-green-50 px-3 py-2">
+                  <CheckCircle className="w-4 h-4 text-green-600 shrink-0" />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold text-green-800">{appliedCoupon.code}</p>
+                    <p className="text-xs text-green-700">
+                      {appliedCoupon.kind === "percent" ? `${appliedCoupon.value}% de desconto` : `${formatCurrency(appliedCoupon.value)} de desconto`}
+                      {" — "}{formatCurrency(couponDiscount)} aplicado
+                    </p>
+                  </div>
+                  <button type="button" onClick={handleRemoveCoupon} className="shrink-0 p-1 hover:opacity-70">
+                    <XCircle className="w-4 h-4 text-green-600" />
+                  </button>
+                </div>
+              ) : (
+                <div className="flex gap-2">
+                  <Input
+                    placeholder="Código do cupom"
+                    value={couponCode}
+                    onChange={e => { setCouponCode(e.target.value.toUpperCase()); setCouponError(""); }}
+                    onKeyDown={e => e.key === "Enter" && handleValidateCoupon()}
+                    className={couponError ? "border-destructive" : ""}
+                  />
+                  <Button type="button" variant="outline" onClick={handleValidateCoupon} disabled={couponLoading || !couponCode.trim()} className="shrink-0">
+                    {couponLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : "Aplicar"}
+                  </Button>
+                </div>
+              )}
+              {couponError && <p className="text-xs text-destructive">{couponError}</p>}
             </div>
           )}
 
@@ -403,12 +481,22 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
               <span>Subtotal</span>
               <span>{formatCurrency(subtotal)}</span>
             </div>
+            {promotionDiscount > 0 && (
+              <div className="flex justify-between text-sm text-green-600">
+                <span className="flex items-center gap-1"><Tag className="w-3 h-3" /> Promoções</span>
+                <span>− {formatCurrency(promotionDiscount)}</span>
+              </div>
+            )}
+            {couponDiscount > 0 && appliedCoupon && (
+              <div className="flex justify-between text-sm text-green-600">
+                <span className="flex items-center gap-1"><Tag className="w-3 h-3" /> Cupom {appliedCoupon.code}</span>
+                <span>− {formatCurrency(couponDiscount)}</span>
+              </div>
+            )}
             {deliveryType === "delivery" && (
               <div className="flex justify-between text-sm">
                 <span>Taxa de entrega</span>
-                <span className={deliveryFee === 0 ? "text-green-600" : ""}>
-                  {deliveryFee === 0 ? "Grátis" : formatCurrency(deliveryFee)}
-                </span>
+                <span className={deliveryFee === 0 ? "text-green-600" : ""}>{deliveryFee === 0 ? "Grátis" : formatCurrency(deliveryFee)}</span>
               </div>
             )}
             <Separator />

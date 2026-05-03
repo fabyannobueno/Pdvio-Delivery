@@ -114,6 +114,7 @@ export interface CartItem {
   unit: string;
   weight?: number;
   stockQuantity?: number;
+  category?: string;
 }
 
 export interface Sale {
@@ -179,11 +180,16 @@ export interface DeliveryOrder {
   subtotal: number;
   delivery_fee: number;
   discount_amount?: number;
+  promotion_discount?: number;
+  coupon_discount?: number;
+  coupon_id?: string;
+  coupon_code?: string;
   total: number;
   payment_method: string;
   notes?: string;
   status: DeliveryOrderStatus;
   created_at: string;
+  mesa_id?: string;
 }
 
 export interface OrderReview {

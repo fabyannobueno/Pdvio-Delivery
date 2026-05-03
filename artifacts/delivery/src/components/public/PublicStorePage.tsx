@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useSearch } from "wouter";
-import { getCompanyBySlug, getProductsByCompanyId, getEffectivePrice, isPromotionActive, isStoreOpen, applyThemeColor, callWaiter } from "@/lib/supabase-service";
+import { getCompanyBySlug, getProductsByCompanyId, getEffectivePrice, isPromotionActive, isStoreOpen, applyThemeColor, callWaiter, fetchActivePromotions } from "@/lib/supabase-service";
+import type { Promotion } from "@/lib/promotions-engine";
 import { supabase } from "@/lib/supabase";
 import { ShoppingCart } from "./ShoppingCart";
 import { WeightCalculator } from "./WeightCalculator";
@@ -49,6 +50,7 @@ export const PublicStorePage = () => {
   const [showChangePassword, setShowChangePassword] = useState(false);
   const [showProfile, setShowProfile] = useState(false);
   const [pendingCheckout, setPendingCheckout] = useState(false);
+  const [promotions, setPromotions] = useState<Promotion[]>([]);
 
   // Parse mesa params from URL
   const mesaParams: MesaParams | undefined = (() => {
@@ -82,8 +84,12 @@ export const PublicStorePage = () => {
         favicon.type = co.delivery_logo_url.startsWith("data:") ? co.delivery_logo_url.split(";")[0].replace("data:", "") : "image/png";
         favicon.href = co.delivery_logo_url;
       }
-      const prods = await getProductsByCompanyId(co.id);
+      const [prods, promos] = await Promise.all([
+        getProductsByCompanyId(co.id),
+        fetchActivePromotions(co.id),
+      ]);
       setProducts(prods);
+      setPromotions(promos as Promotion[]);
       setLoading(false);
     };
     load();
@@ -233,6 +239,7 @@ export const PublicStorePage = () => {
       unit: product.stock_unit,
       weight,
       stockQuantity: product.stock_quantity,
+      category: product.category ?? undefined,
     };
 
     setCart(prev => {
@@ -656,7 +663,7 @@ export const PublicStorePage = () => {
         </>
       )}
       <ShoppingCart isOpen={showCart} onClose={() => setShowCart(false)} cart={cart} setCart={setCart} company={company} onCheckout={() => { setShowCart(false); if (!customer) { setPendingCheckout(true); setShowAuth(true); } else { setShowCheckout(true); } }} />
-      <CheckoutModal isOpen={showCheckout} onClose={() => setShowCheckout(false)} cart={cart} setCart={setCart} company={company} mesaParams={mesaParams} customer={customer} />
+      <CheckoutModal isOpen={showCheckout} onClose={() => setShowCheckout(false)} cart={cart} setCart={setCart} company={company} mesaParams={mesaParams} customer={customer} promotions={promotions} />
       <MyOrdersModal isOpen={showOrders} onClose={() => setShowOrders(false)} company={company} customer={customer} />
       <StoreInfoModal isOpen={showStoreInfo} onClose={() => setShowStoreInfo(false)} company={company} />
       <CustomerAuthModal

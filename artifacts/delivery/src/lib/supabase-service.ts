@@ -117,6 +117,84 @@ export function isStoreOpen(company: Company): boolean {
   return currentTime >= todayHours.openTime && currentTime <= todayHours.closeTime;
 }
 
+export async function fetchActivePromotions(companyId: string) {
+  if (!companyId) return [];
+  const { data, error } = await supabase
+    .from("promotions")
+    .select("*")
+    .eq("company_id", companyId)
+    .eq("is_active", true);
+  if (error) { console.warn("[promotions] fetch failed:", error.message); return []; }
+  return data ?? [];
+}
+
+export async function validateCoupon(
+  code: string,
+  subtotal: number,
+  companyId: string,
+  customerId?: string | null,
+): Promise<{ ok: boolean; coupon?: import("./promotions-engine").Coupon; discount?: number; error?: string }> {
+  const trimmed = code.trim().toUpperCase();
+  if (!trimmed) return { ok: false, error: "Digite um código de cupom." };
+
+  const { data, error } = await supabase
+    .from("coupons")
+    .select("*")
+    .eq("company_id", companyId)
+    .ilike("code", trimmed)
+    .limit(1)
+    .maybeSingle();
+
+  if (error) return { ok: false, error: "Falha ao validar cupom." };
+  if (!data) return { ok: false, error: "Cupom não encontrado." };
+
+  const c = data as import("./promotions-engine").Coupon;
+  const now = new Date();
+  if (!c.is_active) return { ok: false, error: "Cupom desativado." };
+  if (c.starts_at && new Date(c.starts_at) > now) return { ok: false, error: "Cupom ainda não está válido." };
+  if (c.ends_at && new Date(c.ends_at) < now) return { ok: false, error: "Cupom expirado." };
+  if (c.max_uses != null && c.uses_count >= c.max_uses) return { ok: false, error: "Cupom esgotado." };
+  if (subtotal < Number(c.min_purchase ?? 0)) {
+    return { ok: false, error: `Compra mínima de ${Number(c.min_purchase || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })} para usar este cupom.` };
+  }
+
+  if (c.max_uses_per_customer != null && customerId) {
+    const { count } = await supabase
+      .from("coupon_uses")
+      .select("id", { count: "exact", head: true })
+      .eq("coupon_id", c.id)
+      .eq("customer_id", customerId);
+    if (count != null && count >= c.max_uses_per_customer) {
+      return { ok: false, error: c.max_uses_per_customer === 1 ? "Este cupom já foi utilizado por você." : `Você já usou este cupom ${c.max_uses_per_customer}x (limite atingido).` };
+    }
+  }
+
+  const { computeCouponDiscount } = await import("./promotions-engine");
+  const discount = computeCouponDiscount(c, subtotal);
+  if (discount <= 0) return { ok: false, error: "Cupom não gera desconto neste subtotal." };
+  return { ok: true, coupon: c, discount };
+}
+
+export async function consumeCoupon(
+  coupon: import("./promotions-engine").Coupon,
+  ctx: { companyId: string; customerId?: string; customerName: string; orderId?: string; discountAmount: number },
+): Promise<void> {
+  await supabase.from("coupons").update({ uses_count: (coupon.uses_count ?? 0) + 1 }).eq("id", coupon.id);
+  if (ctx.customerId) {
+    try {
+      await supabase.from("coupon_uses").insert({
+        company_id: ctx.companyId,
+        coupon_id: coupon.id,
+        coupon_code: coupon.code,
+        customer_id: ctx.customerId,
+        customer_name: ctx.customerName,
+        order_id: ctx.orderId ?? null,
+        discount_amount: ctx.discountAmount,
+      });
+    } catch (e) { console.warn("[coupons] falha ao gravar coupon_uses:", e); }
+  }
+}
+
 export async function createDeliveryOrder(params: {
   companyId: string;
   items: CartItem[];
@@ -131,10 +209,17 @@ export async function createDeliveryOrder(params: {
   changeFor?: number;
   changeAmount?: number;
   comandaId?: string;
+  promotionDiscount?: number;
+  couponId?: string;
+  couponCode?: string;
+  couponDiscount?: number;
 }): Promise<{ id: string; numeric_id?: number } | null> {
   const subtotal = params.items.reduce((sum, item) => sum + item.totalPrice, 0);
   const fee = params.deliveryType === "delivery" ? params.deliveryFee : 0;
-  const total = subtotal + fee;
+  const promoDisc = params.promotionDiscount ?? 0;
+  const cpnDisc = params.couponDiscount ?? 0;
+  const totalDiscount = promoDisc + cpnDisc;
+  const total = Math.max(0, subtotal + fee - totalDiscount);
 
   const { data: order, error: orderErr } = await supabase
     .from("delivery_orders")
@@ -148,7 +233,11 @@ export async function createDeliveryOrder(params: {
       items: params.items,
       subtotal,
       delivery_fee: fee,
-      discount_amount: 0,
+      discount_amount: totalDiscount,
+      promotion_discount: promoDisc,
+      coupon_discount: cpnDisc,
+      coupon_id: params.couponId ?? null,
+      coupon_code: params.couponCode ?? null,
       total,
       payment_method: params.paymentMethod,
       change_for: params.changeFor ?? null,
