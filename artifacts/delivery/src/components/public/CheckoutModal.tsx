@@ -109,6 +109,11 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
     setCustomerData(prev => ({ ...prev, phone: formatted }));
   };
 
+  const parseChangeFor = () => {
+    const digits = changeFor.replace(/\D/g, "");
+    return digits ? parseInt(digits, 10) / 100 : 0;
+  };
+
   const handleChangeForInput = (e: React.ChangeEvent<HTMLInputElement>) => {
     const digits = e.target.value.replace(/\D/g, "");
     const num = parseInt(digits || "0", 10) / 100;
@@ -124,6 +129,10 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
     if (!customerData.name.trim() || customerData.name.trim().length < 2) return false;
     if (customerData.phone.replace(/\D/g, "").length < 10) return false;
     if (deliveryType === "delivery" && (!customerData.street || !customerData.number || !customerData.neighborhood)) return false;
+    if (selectedPayment === "cash" && needsChange) {
+      const val = parseChangeFor();
+      if (val <= 0 || val < total) return false;
+    }
     return true;
   };
 
@@ -137,9 +146,7 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
       const companyId = mesaParams?.empresa ?? company.id;
 
       const changeNote = selectedPayment === "cash" && needsChange && changeFor
-        ? `Troco para: ${changeFor}`
-        : selectedPayment === "cash" && needsChange
-        ? "Precisa de troco (valor não informado)"
+        ? `Troco para: ${changeFor} (troco: ${(parseChangeFor() - total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })})`
         : null;
       const fullNotes = [orderNotes, changeNote].filter(Boolean).join(" | ");
 
@@ -330,15 +337,22 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
                 </button>
               </div>
               {needsChange && (
-                <div>
-                  <Label htmlFor="change-for" className="text-sm text-muted-foreground mb-1 block">Troco para quanto? (opcional)</Label>
+                <div className="space-y-1">
+                  <Label htmlFor="change-for" className="text-sm font-medium block">Troco para quanto? <span className="text-destructive">*</span></Label>
                   <Input
                     id="change-for"
                     placeholder="R$ 0,00"
                     inputMode="numeric"
                     value={changeFor}
                     onChange={handleChangeForInput}
+                    className={parseChangeFor() > 0 && parseChangeFor() < total ? "border-destructive focus-visible:ring-destructive" : ""}
                   />
+                  {parseChangeFor() > 0 && parseChangeFor() < total && (
+                    <p className="text-xs text-destructive">O valor deve ser maior ou igual ao total do pedido ({total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}).</p>
+                  )}
+                  {parseChangeFor() >= total && parseChangeFor() > 0 && (
+                    <p className="text-xs text-green-600 font-medium">Troco a devolver: {(parseChangeFor() - total).toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</p>
+                  )}
                 </div>
               )}
             </div>
