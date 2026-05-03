@@ -79,7 +79,17 @@ export const OrderTrackingPage = () => {
         getDeliveryOrderById(orderId),
       ]);
       if (cancelled) return;
-      if (c) { setCompany(c); applyThemeColor(c.delivery_primary_color); }
+      if (c) {
+        setCompany(c);
+        applyThemeColor(c.delivery_primary_color);
+        document.title = `Pedido | ${c.name}`;
+        if (c.delivery_logo_url) {
+          let favicon = document.querySelector<HTMLLinkElement>("link[rel='icon']");
+          if (!favicon) { favicon = document.createElement("link"); favicon.rel = "icon"; document.head.appendChild(favicon); }
+          favicon.type = c.delivery_logo_url.startsWith("data:") ? c.delivery_logo_url.split(";")[0].replace("data:", "") : "image/png";
+          favicon.href = c.delivery_logo_url;
+        }
+      }
       setOrder(o);
       if (o?.comanda_id) setComandaConfirmed(true);
       setLoading(false);
