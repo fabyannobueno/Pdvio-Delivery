@@ -122,11 +122,20 @@ export const CustomerAuthModal = ({ isOpen, onClose, company, onAuthenticated }:
                 <ArrowLeft className="w-4 h-4" /> Voltar
               </button>
             ) : (
-              <span>Acesse sua conta</span>
+              <div className="flex items-center gap-3">
+                {company.delivery_logo_url ? (
+                  <img src={company.delivery_logo_url} alt={company.name} className="w-9 h-9 rounded-full object-cover shrink-0" />
+                ) : (
+                  <div className="w-9 h-9 rounded-full flex items-center justify-center shrink-0 text-white font-bold text-sm" style={{ backgroundColor: primaryColor }}>
+                    {company.name.charAt(0)}
+                  </div>
+                )}
+                <span className="font-semibold truncate">{company.name}</span>
+              </div>
             )}
             <button
               onClick={onClose}
-              className="rounded-md p-2 transition-colors"
+              className="rounded-md p-2 transition-colors shrink-0"
               onMouseEnter={() => setCloseHovered(true)}
               onMouseLeave={() => setCloseHovered(false)}
               style={closeHovered ? { color: primaryColor, backgroundColor: `${primaryColor}1a` } : {}}
