@@ -42,8 +42,7 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
   const [orderNotes, setOrderNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const availablePayments = PAYMENT_METHODS.filter(pm =>
-    !company.payment_settings?.enabled?.length ||
-    company.payment_settings.enabled.includes(pm.id)
+    company.payment_settings?.enabled?.includes(pm.id)
   );
   const defaultPayment = (availablePayments.find(p => p.id === "pix") ?? availablePayments[0])?.id as PaymentMethod ?? "pix";
   const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>(defaultPayment);
