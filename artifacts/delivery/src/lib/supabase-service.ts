@@ -547,3 +547,64 @@ async function _findCustomer(companyId: string, identifier: string): Promise<Cus
     .maybeSingle();
   return data as Customer | null;
 }
+
+export async function findCustomerByEmail(companyId: string, email: string): Promise<Customer | null> {
+  const { data } = await supabase
+    .from("customers")
+    .select("id, name, email")
+    .eq("company_id", companyId)
+    .ilike("email", email.toLowerCase().trim())
+    .maybeSingle();
+  return data as Customer | null;
+}
+
+export async function resetCustomerPassword(customerId: string, newPassword: string): Promise<boolean> {
+  const password_hash = await bcrypt.hash(newPassword, 10);
+  const { error } = await supabase
+    .from("customers")
+    .update({ password_hash })
+    .eq("id", customerId);
+  return !error;
+}
+
+export async function sendPasswordResetEmail(params: {
+  toEmail: string;
+  toName: string;
+  resetUrl: string;
+  storeName: string;
+}): Promise<boolean> {
+  const apiKey = import.meta.env.VITE_BREVO_API_KEY;
+  if (!apiKey) { console.error("VITE_BREVO_API_KEY not set"); return false; }
+  try {
+    const res = await fetch("https://api.brevo.com/v3/smtp/email", {
+      method: "POST",
+      headers: { "accept": "application/json", "api-key": apiKey, "content-type": "application/json" },
+      body: JSON.stringify({
+        sender: { name: "PDVIO", email: "no-reply@pdvio.com.br" },
+        to: [{ email: params.toEmail, name: params.toName }],
+        subject: `Redefinição de senha — ${params.storeName}`,
+        htmlContent: `
+          <div style="font-family:sans-serif;max-width:480px;margin:0 auto">
+            <div style="background:#18181b;padding:24px 32px;border-radius:12px 12px 0 0;text-align:center">
+              <img src="https://app.pdvio.com.br/logo-pdvio-light.png" alt="PDVIO" style="height:32px;object-fit:contain" />
+            </div>
+            <div style="background:#fff;padding:32px;border-radius:0 0 12px 12px;border:1px solid #e5e7eb;border-top:none">
+              <h2 style="color:#111;margin:0 0 8px">Redefinir sua senha</h2>
+              <p style="color:#444">Olá, <strong>${params.toName}</strong>!</p>
+              <p style="color:#444">Clique no botão abaixo para alterar a senha do seu perfil na <strong>${params.storeName}</strong>.</p>
+              <p style="margin:32px 0;text-align:center">
+                <a href="${params.resetUrl}" style="background:#18181b;color:#fff;padding:14px 28px;border-radius:8px;text-decoration:none;font-weight:600;font-size:15px">
+                  Redefinir senha
+                </a>
+              </p>
+              <p style="color:#9ca3af;font-size:12px;margin:0">Se você não solicitou, ignore este e-mail.</p>
+            </div>
+          </div>`,
+      }),
+    });
+    return res.ok;
+  } catch (e) {
+    console.error("sendPasswordResetEmail error:", e);
+    return false;
+  }
+}
