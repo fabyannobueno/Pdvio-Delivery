@@ -33,6 +33,8 @@ const PAYMENT_METHODS = [
 export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaParams }: CheckoutModalProps) => {
   const { toast } = useToast();
   const [, navigate] = useLocation();
+  const primaryColor = company.delivery_primary_color || "#6d28d9";
+  const [closeHovered, setCloseHovered] = useState(false);
 
   const isMesaMode = !!mesaParams;
   const initialDeliveryType: DeliveryType = isMesaMode ? "dine_in" : "delivery";
@@ -219,11 +221,17 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent hideCloseButton className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center justify-between">
             Finalizar Pedido
-            <Button variant="ghost" size="icon" onClick={onClose}><X className="w-4 h-4" /></Button>
+            <button
+              onClick={onClose}
+              className="rounded-md p-2 transition-colors flex-shrink-0"
+              onMouseEnter={() => setCloseHovered(true)}
+              onMouseLeave={() => setCloseHovered(false)}
+              style={closeHovered ? { color: primaryColor, backgroundColor: `${primaryColor}1a` } : {}}
+            ><X className="w-4 h-4" /></button>
           </DialogTitle>
         </DialogHeader>
 
