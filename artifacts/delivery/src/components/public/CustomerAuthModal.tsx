@@ -15,6 +15,19 @@ interface CustomerAuthModalProps {
   onAuthenticated: (session: CustomerSession) => void;
 }
 
+function maskPhone(value: string): string {
+  const digits = value.replace(/\D/g, "").slice(0, 11);
+  if (digits.length <= 2) return digits.length ? `(${digits}` : "";
+  if (digits.length <= 6) return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+  if (digits.length <= 10) return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+  return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7)}`;
+}
+
+function looksLikePhone(value: string): boolean {
+  const first = value.replace(/\s/g, "")[0];
+  return !!first && !value.includes("@") && (first === "(" || /\d/.test(first));
+}
+
 export const CustomerAuthModal = ({ isOpen, onClose, company, onAuthenticated }: CustomerAuthModalProps) => {
   const primaryColor = company.delivery_primary_color || "#6d28d9";
   const [closeHovered, setCloseHovered] = useState(false);
@@ -22,6 +35,7 @@ export const CustomerAuthModal = ({ isOpen, onClose, company, onAuthenticated }:
   const [error, setError] = useState("");
 
   const [loginId, setLoginId] = useState("");
+  const loginIsPhone = looksLikePhone(loginId);
   const [loginPass, setLoginPass] = useState("");
   const [showLoginPass, setShowLoginPass] = useState(false);
 
@@ -90,7 +104,16 @@ export const CustomerAuthModal = ({ isOpen, onClose, company, onAuthenticated }:
             <form onSubmit={handleLogin} className="space-y-4">
               <div className="space-y-1">
                 <Label>E-mail ou telefone</Label>
-                <Input placeholder="seu@email.com ou (11) 99999-9999" value={loginId} onChange={e => setLoginId(e.target.value)} autoComplete="username" />
+                <Input
+                  placeholder="seu@email.com ou (11) 99999-9999"
+                  value={loginId}
+                  inputMode={loginIsPhone ? "numeric" : "email"}
+                  autoComplete="username"
+                  onChange={e => {
+                    const v = e.target.value;
+                    setLoginId(looksLikePhone(v) ? maskPhone(v) : v);
+                  }}
+                />
               </div>
               <div className="space-y-1">
                 <Label>Senha</Label>
@@ -121,7 +144,13 @@ export const CustomerAuthModal = ({ isOpen, onClose, company, onAuthenticated }:
               </div>
               <div className="space-y-1">
                 <Label>Telefone</Label>
-                <Input placeholder="(11) 99999-9999" value={signupPhone} onChange={e => setSignupPhone(e.target.value)} autoComplete="tel" />
+                <Input
+                  placeholder="(11) 99999-9999"
+                  value={signupPhone}
+                  inputMode="numeric"
+                  autoComplete="tel"
+                  onChange={e => setSignupPhone(maskPhone(e.target.value))}
+                />
               </div>
               <div className="space-y-1">
                 <Label>Senha</Label>
