@@ -1,8 +1,7 @@
 import { supabase } from "./supabase";
-import type { Company, Product, CartItem } from "../types";
+import type { Company, Product, CartItem, DeliveryType } from "../types";
 
 export async function getCompanyBySlug(slug: string): Promise<Company | null> {
-  // Try exact match first
   const { data, error } = await supabase
     .from("companies")
     .select("*")
@@ -11,8 +10,6 @@ export async function getCompanyBySlug(slug: string): Promise<Company | null> {
 
   if (error) {
     console.error("getCompanyBySlug error:", error.message);
-
-    // Try case-insensitive fallback without filter to diagnose RLS issues
     const { data: probe } = await supabase.from("companies").select("id").limit(1);
     if (!probe || probe.length === 0) {
       console.error(
@@ -24,7 +21,6 @@ export async function getCompanyBySlug(slug: string): Promise<Company | null> {
   }
 
   if (!data) {
-    // Log all slugs to diagnose mismatch
     const { data: allCompanies } = await supabase
       .from("companies")
       .select("id, name, delivery_slug, delivery_enabled")
@@ -112,7 +108,6 @@ export function isStoreOpen(company: Company): boolean {
   const m = (parts.find((p) => p.type === "minute")?.value ?? "00").padStart(2, "0");
   const currentTime = `${h}:${m}`;
 
-  // Support both Portuguese string days ("Sexta") and numeric days (5)
   const todayHours = hours.find((entry) =>
     entry.day === todayPt || entry.day === (dayIndex as unknown as string)
   );
@@ -126,17 +121,17 @@ export async function createDeliveryOrder(params: {
   items: CartItem[];
   paymentMethod: string;
   notes?: string;
-  deliveryType: "delivery" | "pickup";
+  deliveryType: DeliveryType;
   deliveryFee: number;
   customerName: string;
   customerPhone: string;
   address?: string;
+  tableIdentifier?: string;
 }): Promise<{ id: string; numeric_id?: number } | null> {
   const subtotal = params.items.reduce((sum, item) => sum + item.totalPrice, 0);
   const fee = params.deliveryType === "delivery" ? params.deliveryFee : 0;
   const total = subtotal + fee;
 
-  // 1. Criar pedido de delivery
   const { data: order, error: orderErr } = await supabase
     .from("delivery_orders")
     .insert({
@@ -145,9 +140,11 @@ export async function createDeliveryOrder(params: {
       customer_phone: params.customerPhone,
       address: params.address ?? null,
       delivery_type: params.deliveryType,
+      table_identifier: params.tableIdentifier ?? null,
       items: params.items,
       subtotal,
       delivery_fee: fee,
+      discount_amount: 0,
       total,
       payment_method: params.paymentMethod,
       notes: params.notes ?? null,
@@ -161,66 +158,82 @@ export async function createDeliveryOrder(params: {
     return null;
   }
 
-  // 2. Criar venda financeira vinculada
-  const saleNotes = [
-    params.notes,
-    `Cliente: ${params.customerName}`,
-    `Tel: ${params.customerPhone}`,
-    params.deliveryType === "delivery"
-      ? `Endereço: ${params.address}`
-      : "Retirada na loja",
-    `Pedido #${order.numeric_id}`,
-  ].filter(Boolean).join(" | ");
+  if (params.deliveryType !== "dine_in") {
+    const saleNotes = [
+      params.notes,
+      `Cliente: ${params.customerName}`,
+      `Tel: ${params.customerPhone}`,
+      params.deliveryType === "delivery"
+        ? `Endereço: ${params.address}`
+        : "Retirada na loja",
+      `Pedido #${order.numeric_id}`,
+    ].filter(Boolean).join(" | ");
 
-  const { data: sale } = await supabase
-    .from("sales")
-    .insert({
-      company_id: params.companyId,
-      subtotal,
-      discount_amount: 0,
-      total,
-      payment_method: params.paymentMethod,
-      payment_amount: total,
-      change_amount: 0,
-      notes: saleNotes,
-      status: "pending",
-    })
-    .select()
-    .single();
-
-  if (sale) {
-    // 3. Criar itens da venda
-    const saleItems = params.items.map((item) => ({
-      sale_id: sale.id,
-      product_id: item.productId ?? null,
-      product_name: item.name,
-      quantity: item.quantity,
-      unit_price: item.price,
-      discount_amount: 0,
-      subtotal: item.totalPrice,
-      addons: item.selectedAddons ?? [],
-      notes: null,
-    }));
-    await supabase.from("sale_items").insert(saleItems);
-
-    // 4. Criar movimentações de estoque (baixa)
-    const movements = params.items
-      .filter((item) => item.productId)
-      .map((item) => ({
+    const { data: sale } = await supabase
+      .from("sales")
+      .insert({
         company_id: params.companyId,
-        product_id: item.productId,
-        kind: "sale",
-        quantity: item.weight ?? item.quantity,
-        reference: `Pedido #${order.numeric_id}`,
-        notes: `Venda delivery — ${item.name}`,
+        subtotal,
+        discount_amount: 0,
+        total,
+        payment_method: params.paymentMethod,
+        payment_amount: total,
+        change_amount: 0,
+        notes: saleNotes,
+        status: "pending",
+      })
+      .select()
+      .single();
+
+    if (sale) {
+      const saleItems = params.items.map((item) => ({
+        sale_id: sale.id,
+        product_id: item.productId ?? null,
+        product_name: item.name,
+        quantity: item.quantity,
+        unit_price: item.price,
+        discount_amount: 0,
+        subtotal: item.totalPrice,
+        addons: item.selectedAddons ?? [],
+        notes: null,
       }));
-    if (movements.length > 0) {
-      const { error: movErr } = await supabase.from("stock_movements").insert(movements);
-      if (movErr) console.error("Error creating stock movements:", movErr);
+      await supabase.from("sale_items").insert(saleItems);
+
+      const movements = params.items
+        .filter((item) => item.productId)
+        .map((item) => ({
+          company_id: params.companyId,
+          product_id: item.productId,
+          kind: "sale",
+          quantity: item.weight ?? item.quantity,
+          reference: `Pedido #${order.numeric_id}`,
+          notes: `Venda delivery — ${item.name}`,
+        }));
+      if (movements.length > 0) {
+        const { error: movErr } = await supabase.from("stock_movements").insert(movements);
+        if (movErr) console.error("Error creating stock movements:", movErr);
+      }
     }
   }
 
   return { id: order.id, numeric_id: order.numeric_id };
+}
+
+export async function callWaiter(params: {
+  companyId: string;
+  tableLabel: string;
+  comandaId?: string;
+}): Promise<boolean> {
+  const { error } = await supabase.from("waiter_calls").insert({
+    company_id: params.companyId,
+    table_label: params.tableLabel,
+    comanda_id: params.comandaId ?? null,
+  });
+  if (error) {
+    console.error("Error calling waiter:", error);
+    return false;
+  }
+  return true;
 }
 
 export async function getDeliveryOrderById(
@@ -270,10 +283,11 @@ export function generateOrderWhatsAppMessage(params: {
   total: number;
   deliveryFee: number;
   paymentMethod: string;
-  deliveryType: "delivery" | "pickup";
+  deliveryType: DeliveryType;
   customerName: string;
   customerPhone: string;
   address?: string;
+  tableIdentifier?: string;
   notes?: string;
 }): string {
   const paymentLabels: Record<string, string> = {
@@ -301,7 +315,9 @@ export function generateOrderWhatsAppMessage(params: {
   }
   msg += `\n💳 *Pagamento:* ${paymentLabels[params.paymentMethod] ?? params.paymentMethod}\n`;
 
-  if (params.deliveryType === "delivery" && params.address) {
+  if (params.deliveryType === "dine_in" && params.tableIdentifier) {
+    msg += `\n🍽️ *Mesa:* ${params.tableIdentifier}\n`;
+  } else if (params.deliveryType === "delivery" && params.address) {
     msg += `\n🏠 *Endereço:* ${params.address}\n`;
   } else {
     msg += `\n🏪 *Retirada na loja*\n`;

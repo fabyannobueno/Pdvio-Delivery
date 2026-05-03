@@ -111,16 +111,15 @@ export type PaymentMethod =
   | "debit_card"
   | "ticket";
 
+export type DeliveryType = "delivery" | "pickup" | "dine_in";
+
 export type DeliveryOrderStatus =
-  // comum
   | "pending"
   | "confirmed"
   | "preparing"
   | "cancelled"
-  // entrega
   | "out_for_delivery"
   | "delivered"
-  // retirada
   | "ready_for_pickup"
   | "picked_up";
 
@@ -131,13 +130,21 @@ export interface DeliveryOrder {
   customer_name: string;
   customer_phone: string;
   address?: string;
-  delivery_type: "delivery" | "pickup";
+  delivery_type: DeliveryType;
+  table_identifier?: string;
+  comanda_id?: string;
   items: CartItem[];
   subtotal: number;
   delivery_fee: number;
+  discount_amount?: number;
   total: number;
   payment_method: string;
   notes?: string;
   status: DeliveryOrderStatus;
   created_at: string;
+}
+
+export interface MesaParams {
+  mesa: string;
+  empresa: string;
 }

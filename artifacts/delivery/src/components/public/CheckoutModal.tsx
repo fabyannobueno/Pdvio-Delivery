@@ -7,10 +7,11 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Separator } from "@/components/ui/separator";
-import { X, Truck, Home, CreditCard, Smartphone, DollarSign, Receipt, Loader2, CheckCircle2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { X, Truck, Home, UtensilsCrossed, CreditCard, Smartphone, DollarSign, Receipt, Loader2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { createDeliveryOrder, sendWhatsAppOrder, generateOrderWhatsAppMessage, formatCurrency } from "@/lib/supabase-service";
-import type { Company, CartItem, PaymentMethod } from "@/types";
+import type { Company, CartItem, PaymentMethod, DeliveryType, MesaParams } from "@/types";
 
 interface CheckoutModalProps {
   isOpen: boolean;
@@ -18,6 +19,7 @@ interface CheckoutModalProps {
   cart: CartItem[];
   setCart: (cart: CartItem[]) => void;
   company: Company;
+  mesaParams?: MesaParams;
 }
 
 const PAYMENT_METHODS = [
@@ -28,14 +30,22 @@ const PAYMENT_METHODS = [
   { id: "ticket" as PaymentMethod, name: "Vale Refeição", icon: Receipt, description: "VR, VA, Sodexo, etc." },
 ];
 
-export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company }: CheckoutModalProps) => {
+export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaParams }: CheckoutModalProps) => {
   const { toast } = useToast();
   const [, navigate] = useLocation();
-  const [deliveryType, setDeliveryType] = useState<"delivery" | "pickup">("delivery");
+
+  const isMesaMode = !!mesaParams;
+  const initialDeliveryType: DeliveryType = isMesaMode ? "dine_in" : "delivery";
+
+  const [deliveryType, setDeliveryType] = useState<DeliveryType>(initialDeliveryType);
   const [customerData, setCustomerData] = useState({ name: "", phone: "", cep: "", street: "", number: "", neighborhood: "", city: "", state: "" });
   const [orderNotes, setOrderNotes] = useState("");
   const [loading, setLoading] = useState(false);
   const [selectedPayment, setSelectedPayment] = useState<PaymentMethod>("pix");
+
+  useEffect(() => {
+    if (isMesaMode) setDeliveryType("dine_in");
+  }, [isMesaMode, isOpen]);
 
   useEffect(() => {
     const saved = localStorage.getItem(`customer_${company.id}`);
@@ -111,8 +121,11 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company }: Check
 
     try {
       const address = deliveryType === "delivery" ? buildAddress() : undefined;
+      const tableIdentifier = deliveryType === "dine_in" ? mesaParams?.mesa : undefined;
+      const companyId = mesaParams?.empresa ?? company.id;
+
       const sale = await createDeliveryOrder({
-        companyId: company.id,
+        companyId,
         items: cart,
         paymentMethod: selectedPayment,
         notes: orderNotes,
@@ -121,28 +134,31 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company }: Check
         customerName: customerData.name,
         customerPhone: customerData.phone,
         address,
+        tableIdentifier,
       });
 
       if (!sale) throw new Error("Erro ao criar pedido");
 
-      const message = generateOrderWhatsAppMessage({
-        company,
-        items: cart,
-        total,
-        deliveryFee,
-        paymentMethod: selectedPayment,
-        deliveryType,
-        customerName: customerData.name,
-        customerPhone: customerData.phone,
-        address,
-        notes: orderNotes,
-      });
+      if (deliveryType !== "dine_in") {
+        const message = generateOrderWhatsAppMessage({
+          company,
+          items: cart,
+          total,
+          deliveryFee,
+          paymentMethod: selectedPayment,
+          deliveryType,
+          customerName: customerData.name,
+          customerPhone: customerData.phone,
+          address,
+          notes: orderNotes,
+        });
 
-      if (company.delivery_whatsapp) {
-        const storeWhatsApp = company.delivery_whatsapp.replace(/\D/g, "");
-        window.open(`https://wa.me/${storeWhatsApp}?text=${encodeURIComponent(message)}`, "_blank");
-      } else if (company.wapi_instance_id) {
-        await sendWhatsAppOrder(company, message, customerData.phone);
+        if (company.delivery_whatsapp) {
+          const storeWhatsApp = company.delivery_whatsapp.replace(/\D/g, "");
+          window.open(`https://wa.me/${storeWhatsApp}?text=${encodeURIComponent(message)}`, "_blank");
+        } else if (company.wapi_instance_id) {
+          await sendWhatsAppOrder(company, message, customerData.phone);
+        }
       }
 
       setCart([]);
@@ -157,6 +173,13 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company }: Check
     }
   };
 
+  const deliveryOptions: { value: DeliveryType; label: string; icon: React.ComponentType<{ className?: string }>; time?: string }[] = isMesaMode
+    ? [{ value: "dine_in", label: "Comer aqui", icon: UtensilsCrossed, time: mesaParams?.mesa }]
+    : [
+        { value: "delivery", label: "Entrega", icon: Truck, time: company.delivery_time },
+        { value: "pickup", label: "Retirada", icon: Home, time: company.delivery_pickup_time },
+      ];
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -168,23 +191,33 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company }: Check
         </DialogHeader>
 
         <div className="space-y-6">
+          {/* Mesa banner */}
+          {isMesaMode && mesaParams && (
+            <div className="flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/20 px-4 py-3">
+              <UtensilsCrossed className="w-5 h-5 text-primary shrink-0" />
+              <div>
+                <p className="font-semibold text-primary text-sm">Pedido para a mesa</p>
+                <p className="text-xs text-muted-foreground">{mesaParams.mesa} — seu pedido será adicionado à comanda</p>
+              </div>
+              <Badge className="ml-auto" variant="secondary">{mesaParams.mesa}</Badge>
+            </div>
+          )}
+
           {/* Tipo de entrega */}
           <div>
-            <Label className="text-base font-semibold mb-3 block">Tipo de Entrega</Label>
-            <div className="grid grid-cols-2 gap-3">
-              {[
-                { value: "delivery", label: "Entrega", icon: Truck, time: company.delivery_time },
-                { value: "pickup", label: "Retirada", icon: Home, time: company.delivery_pickup_time },
-              ].map(opt => {
+            <Label className="text-base font-semibold mb-3 block">Tipo de Pedido</Label>
+            <div className={`grid gap-3 ${deliveryOptions.length === 1 ? "grid-cols-1" : "grid-cols-2"}`}>
+              {deliveryOptions.map(opt => {
                 const Icon = opt.icon;
                 return (
                   <button
                     key={opt.value}
                     type="button"
-                    onClick={() => setDeliveryType(opt.value as "delivery" | "pickup")}
+                    onClick={() => !isMesaMode && setDeliveryType(opt.value)}
+                    disabled={isMesaMode}
                     className={`flex flex-col items-center p-4 rounded-lg border-2 transition-colors ${
                       deliveryType === opt.value ? "border-primary bg-primary/5" : "border-border hover:bg-muted/50"
-                    }`}
+                    } ${isMesaMode ? "cursor-default" : ""}`}
                   >
                     <Icon className="w-6 h-6 mb-2" />
                     <span className="font-medium">{opt.label}</span>

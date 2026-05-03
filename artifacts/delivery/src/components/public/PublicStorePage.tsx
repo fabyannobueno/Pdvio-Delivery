@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { useParams } from "wouter";
-import { getCompanyBySlug, getProductsByCompanyId, getEffectivePrice, isPromotionActive, isStoreOpen, applyThemeColor } from "@/lib/supabase-service";
+import { useParams, useSearch } from "wouter";
+import { getCompanyBySlug, getProductsByCompanyId, getEffectivePrice, isPromotionActive, isStoreOpen, applyThemeColor, callWaiter } from "@/lib/supabase-service";
 import { supabase } from "@/lib/supabase";
 import { ShoppingCart } from "./ShoppingCart";
 import { WeightCalculator } from "./WeightCalculator";
@@ -15,11 +15,15 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent } from "@/components/ui/card";
-import { Search, ShoppingCart as CartIcon, Tag, Clock, Motorbike, ChevronLeft, ChevronRight, DollarSign, Star } from "lucide-react";
-import type { Company, Product, CartItem, ProductAddon } from "@/types";
+import { useToast } from "@/hooks/use-toast";
+import { Search, ShoppingCart as CartIcon, Tag, Clock, Motorbike, ChevronLeft, ChevronRight, DollarSign, Star, BellRing, UtensilsCrossed, Loader2 } from "lucide-react";
+import type { Company, Product, CartItem, ProductAddon, MesaParams } from "@/types";
 
 export const PublicStorePage = () => {
   const { slug } = useParams<{ slug: string }>();
+  const search = useSearch();
+  const { toast } = useToast();
+
   const [company, setCompany] = useState<Company | null>(null);
   const [products, setProducts] = useState<Product[]>([]);
   const [filteredProducts, setFilteredProducts] = useState<Product[]>([]);
@@ -35,7 +39,20 @@ export const PublicStorePage = () => {
   const [showOrders, setShowOrders] = useState(false);
   const [showStoreInfo, setShowStoreInfo] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [callingWaiter, setCallingWaiter] = useState(false);
   const scrollRefs = useRef<Record<string, HTMLDivElement | null>>({});
+
+  // Parse mesa params from URL
+  const mesaParams: MesaParams | undefined = (() => {
+    const params = new URLSearchParams(search);
+    const mesa = params.get("mesa");
+    const empresa = params.get("empresa");
+    const modo = params.get("modo");
+    if (modo === "mesa" && mesa && empresa) {
+      return { mesa, empresa };
+    }
+    return undefined;
+  })();
 
   useEffect(() => {
     if (!slug) return;
@@ -155,7 +172,6 @@ export const PublicStorePage = () => {
     };
 
     setCart(prev => {
-      const key = item.productId + JSON.stringify(item.selectedAddons);
       const existing = prev.findIndex(i => i.productId === item.productId && JSON.stringify(i.selectedAddons) === JSON.stringify(item.selectedAddons));
       if (existing >= 0 && !weight) {
         return prev.map((i, idx) => idx === existing
@@ -165,6 +181,24 @@ export const PublicStorePage = () => {
       }
       return [...prev, item];
     });
+  };
+
+  const handleCallWaiter = async () => {
+    if (!company || !mesaParams) return;
+    setCallingWaiter(true);
+    try {
+      const ok = await callWaiter({
+        companyId: mesaParams.empresa,
+        tableLabel: mesaParams.mesa,
+      });
+      if (ok) {
+        toast({ title: "Garçom chamado!", description: "Em breve alguém virá até você." });
+      } else {
+        toast({ title: "Erro ao chamar garçom", description: "Tente novamente.", variant: "destructive" });
+      }
+    } finally {
+      setCallingWaiter(false);
+    }
   };
 
   const scroll = (cat: string, dir: number) => {
@@ -240,7 +274,6 @@ export const PublicStorePage = () => {
                   {company.delivery_description && <p className="text-muted-foreground">{company.delivery_description}</p>}
                 </div>
               </div>
-              {/* Info chips — below name, no cover */}
               <div className="flex flex-wrap gap-2">
                 {!storeOpen && (
                   <Badge variant="destructive" className="flex items-center gap-1">
@@ -281,45 +314,70 @@ export const PublicStorePage = () => {
             </div>
           )}
 
-          {/* Info chips — with cover (below cover image) */}
+          {/* Info chips — with cover */}
           {company.delivery_cover_url && (
-          <div className="flex flex-wrap gap-2 mb-6">
-            {!storeOpen && (
-              <Badge variant="destructive" className="flex items-center gap-1">
-                <Clock className="w-3 h-3" /> Fechado
-              </Badge>
-            )}
-            {storeOpen && (
-              <Badge className="bg-green-500 text-white flex items-center gap-1">
-                <Clock className="w-3 h-3" /> Aberto
-              </Badge>
-            )}
-            {company.delivery_rating && (
-              <Badge variant="outline" className="flex items-center gap-1 text-yellow-500 border-yellow-400">
-                <Star className="w-3 h-3 fill-yellow-400" /> {company.delivery_rating.toFixed(1)}
-                {company.delivery_rating_count ? ` (${company.delivery_rating_count})` : ""}
-              </Badge>
-            )}
-            {company.delivery_time && (
-              <Badge variant="outline" className="flex items-center gap-1">
-                <Motorbike className="w-3 h-3" /> {company.delivery_time}
-              </Badge>
-            )}
-            {company.delivery_min_order > 0 && (
-              <Badge variant="outline" className="flex items-center gap-1">
-                <DollarSign className="w-3 h-3" /> Mín. R$ {company.delivery_min_order.toFixed(2).replace(".", ",")}
-              </Badge>
-            )}
-            {company.delivery_fee === 0 ? (
-              <Badge variant="outline" className="flex items-center gap-1 text-green-600 border-green-600">
-                <Tag className="w-3 h-3" /> Entrega grátis
-              </Badge>
-            ) : company.delivery_fee > 0 ? (
-              <Badge variant="outline" className="flex items-center gap-1">
-                <Tag className="w-3 h-3" /> Taxa: R$ {company.delivery_fee.toFixed(2).replace(".", ",")}
-              </Badge>
-            ) : null}
-          </div>
+            <div className="flex flex-wrap gap-2 mb-6">
+              {!storeOpen && (
+                <Badge variant="destructive" className="flex items-center gap-1">
+                  <Clock className="w-3 h-3" /> Fechado
+                </Badge>
+              )}
+              {storeOpen && (
+                <Badge className="bg-green-500 text-white flex items-center gap-1">
+                  <Clock className="w-3 h-3" /> Aberto
+                </Badge>
+              )}
+              {company.delivery_rating && (
+                <Badge variant="outline" className="flex items-center gap-1 text-yellow-500 border-yellow-400">
+                  <Star className="w-3 h-3 fill-yellow-400" /> {company.delivery_rating.toFixed(1)}
+                  {company.delivery_rating_count ? ` (${company.delivery_rating_count})` : ""}
+                </Badge>
+              )}
+              {company.delivery_time && (
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <Motorbike className="w-3 h-3" /> {company.delivery_time}
+                </Badge>
+              )}
+              {company.delivery_min_order > 0 && (
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <DollarSign className="w-3 h-3" /> Mín. R$ {company.delivery_min_order.toFixed(2).replace(".", ",")}
+                </Badge>
+              )}
+              {company.delivery_fee === 0 ? (
+                <Badge variant="outline" className="flex items-center gap-1 text-green-600 border-green-600">
+                  <Tag className="w-3 h-3" /> Entrega grátis
+                </Badge>
+              ) : company.delivery_fee > 0 ? (
+                <Badge variant="outline" className="flex items-center gap-1">
+                  <Tag className="w-3 h-3" /> Taxa: R$ {company.delivery_fee.toFixed(2).replace(".", ",")}
+                </Badge>
+              ) : null}
+            </div>
+          )}
+
+          {/* Mesa mode banner */}
+          {mesaParams && (
+            <div className="flex items-center justify-between gap-3 rounded-xl bg-primary/10 border border-primary/20 px-4 py-3 mb-6">
+              <div className="flex items-center gap-3">
+                <UtensilsCrossed className="w-5 h-5 text-primary shrink-0" />
+                <div>
+                  <p className="font-semibold text-primary text-sm">Você está na {mesaParams.mesa}</p>
+                  <p className="text-xs text-muted-foreground">Adicione itens e finalize para enviar à comanda</p>
+                </div>
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                className="shrink-0 border-primary text-primary hover:bg-primary hover:text-primary-foreground"
+                onClick={handleCallWaiter}
+                disabled={callingWaiter}
+              >
+                {callingWaiter
+                  ? <Loader2 className="w-4 h-4 animate-spin" />
+                  : <><BellRing className="w-4 h-4 mr-1" /> Chamar garçom</>
+                }
+              </Button>
+            </div>
           )}
 
           {/* Search */}
@@ -349,7 +407,6 @@ export const PublicStorePage = () => {
                 <div key={cat}>
                   <h2 className="text-xl font-bold mb-4">{cat.charAt(0).toUpperCase() + cat.slice(1).toLowerCase()}</h2>
 
-                  {/* Mobile: vertical grid, Desktop: horizontal scroll */}
                   <div className="relative">
                     <button className="hidden md:flex absolute -left-4 top-1/2 -translate-y-1/2 z-10 w-8 h-8 items-center justify-center bg-white rounded-full shadow-md" onClick={() => scroll(cat, -1)}>
                       <ChevronLeft className="w-4 h-4" />
@@ -447,7 +504,7 @@ export const PublicStorePage = () => {
         </>
       )}
       <ShoppingCart isOpen={showCart} onClose={() => setShowCart(false)} cart={cart} setCart={setCart} company={company} onCheckout={() => { setShowCart(false); setShowCheckout(true); }} />
-      <CheckoutModal isOpen={showCheckout} onClose={() => setShowCheckout(false)} cart={cart} setCart={setCart} company={company} />
+      <CheckoutModal isOpen={showCheckout} onClose={() => setShowCheckout(false)} cart={cart} setCart={setCart} company={company} mesaParams={mesaParams} />
       <MyOrdersModal isOpen={showOrders} onClose={() => setShowOrders(false)} company={company} />
       <StoreInfoModal isOpen={showStoreInfo} onClose={() => setShowStoreInfo(false)} company={company} />
     </>

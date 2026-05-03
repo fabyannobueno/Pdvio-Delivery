@@ -1,10 +1,11 @@
 import { useState, useEffect } from "react";
 import { useRoute, useLocation } from "wouter";
-import { Clock, CheckCircle2, ChefHat, Package, Motorbike, MapPin, X, ArrowLeft, Loader2 } from "lucide-react";
+import { Clock, CheckCircle2, ChefHat, Package, Motorbike, MapPin, X, ArrowLeft, Loader2, UtensilsCrossed } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import { getCompanyBySlug, getDeliveryOrderById, applyThemeColor, formatCurrency } from "@/lib/supabase-service";
+import { supabase } from "@/lib/supabase";
 import type { Company, DeliveryOrder, DeliveryOrderStatus } from "@/types";
 
 interface StatusStep {
@@ -32,8 +33,11 @@ const PICKUP_STEPS: StatusStep[] = [
   { key: "picked_up",        label: "Retirado",           description: "Pedido retirado. Bom apetite! 😍",                  icon: CheckCircle2,color: "text-green-500",  bg: "bg-green-100" },
 ];
 
-const STATUS_ORDER: DeliveryOrderStatus[] = [
-  "pending", "confirmed", "preparing", "out_for_delivery", "ready_for_pickup", "delivered", "picked_up",
+const DINE_IN_STEPS: StatusStep[] = [
+  { key: "pending",   label: "Pedido Enviado",         description: "Aguardando ser adicionado à comanda.",           icon: Clock,       color: "text-gray-500",  bg: "bg-gray-100" },
+  { key: "confirmed", label: "Adicionado à Comanda",   description: "Seu pedido foi adicionado à comanda! 🍽️",        icon: CheckCircle2,color: "text-green-500", bg: "bg-green-100" },
+  { key: "preparing", label: "Em Preparo",             description: "Seu pedido está sendo preparado. 👨‍🍳",           icon: ChefHat,     color: "text-primary",   bg: "bg-primary/10" },
+  { key: "delivered", label: "Servido",                description: "Bom apetite! 😋",                                icon: CheckCircle2,color: "text-green-500", bg: "bg-green-100" },
 ];
 
 const PAYMENT_LABELS: Record<string, string> = {
@@ -54,6 +58,7 @@ export const OrderTrackingPage = () => {
   const [order, setOrder] = useState<DeliveryOrder | null>(null);
   const [loading, setLoading] = useState(true);
   const [now, setNow] = useState(new Date());
+  const [comandaConfirmed, setComandaConfirmed] = useState(false);
 
   useEffect(() => {
     const t = setInterval(() => setNow(new Date()), 1000);
@@ -72,6 +77,7 @@ export const OrderTrackingPage = () => {
       if (cancelled) return;
       if (c) { setCompany(c); applyThemeColor(c.delivery_primary_color); }
       setOrder(o);
+      if (o?.comanda_id) setComandaConfirmed(true);
       setLoading(false);
     };
 
@@ -79,11 +85,34 @@ export const OrderTrackingPage = () => {
 
     const poll = setInterval(async () => {
       const o = await getDeliveryOrderById(orderId);
-      if (!cancelled && o) setOrder(o);
+      if (!cancelled && o) {
+        setOrder(o);
+        if (o.comanda_id && !comandaConfirmed) setComandaConfirmed(true);
+      }
     }, 5000);
 
     return () => { cancelled = true; clearInterval(poll); };
   }, [slug, orderId]);
+
+  // Realtime subscription to detect comanda_id being filled
+  useEffect(() => {
+    if (!orderId) return;
+    const channel = supabase
+      .channel(`order_tracking_${orderId}`)
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "delivery_orders", filter: `id=eq.${orderId}` },
+        (payload) => {
+          const updated = payload.new as DeliveryOrder;
+          setOrder(updated);
+          if (updated.comanda_id && !comandaConfirmed) {
+            setComandaConfirmed(true);
+          }
+        }
+      )
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
+  }, [orderId, comandaConfirmed]);
 
   if (loading) {
     return (
@@ -106,7 +135,8 @@ export const OrderTrackingPage = () => {
   }
 
   const isCancelled = order.status === "cancelled";
-  const steps = order.delivery_type === "delivery" ? DELIVERY_STEPS : PICKUP_STEPS;
+  const isDineIn = order.delivery_type === "dine_in";
+  const steps = isDineIn ? DINE_IN_STEPS : order.delivery_type === "delivery" ? DELIVERY_STEPS : PICKUP_STEPS;
   const currentIdx = steps.findIndex((s) => s.key === order.status);
 
   const formatTs = (ts: string) =>
@@ -137,6 +167,28 @@ export const OrderTrackingPage = () => {
 
       <div className="max-w-lg mx-auto px-4 py-6 space-y-6">
 
+        {/* Comanda confirmada — dine_in */}
+        {isDineIn && comandaConfirmed && (
+          <div className="rounded-xl border border-green-300 bg-green-50 p-4 flex items-start gap-3">
+            <CheckCircle2 className="w-6 h-6 text-green-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-green-800">Pedido adicionado à comanda!</p>
+              <p className="text-sm text-green-700">Seus itens foram adicionados à comanda{order.table_identifier ? ` da ${order.table_identifier}` : ""}. Em breve serão preparados.</p>
+            </div>
+          </div>
+        )}
+
+        {/* Aguardando comanda — dine_in pending */}
+        {isDineIn && !comandaConfirmed && order.status === "pending" && (
+          <div className="rounded-xl border border-yellow-300 bg-yellow-50 p-4 flex items-start gap-3">
+            <UtensilsCrossed className="w-6 h-6 text-yellow-600 shrink-0 mt-0.5" />
+            <div>
+              <p className="font-semibold text-yellow-800">Aguardando adição à comanda</p>
+              <p className="text-sm text-yellow-700">Seu pedido foi enviado e será adicionado à comanda{order.table_identifier ? ` da ${order.table_identifier}` : ""} em instantes.</p>
+            </div>
+          </div>
+        )}
+
         {/* Cancelado */}
         {isCancelled && (
           <div className="rounded-xl border border-destructive/40 bg-destructive/5 p-6 text-center space-y-2">
@@ -151,7 +203,7 @@ export const OrderTrackingPage = () => {
           <div className="rounded-xl border bg-card p-4 space-y-1">
             <p className="text-xs text-muted-foreground mb-3">
               Pedido em {formatTs(order.created_at)} •{" "}
-              {order.delivery_type === "delivery" ? "Entrega" : "Retirada"}
+              {isDineIn ? `Mesa: ${order.table_identifier ?? "—"}` : order.delivery_type === "delivery" ? "Entrega" : "Retirada"}
             </p>
 
             {steps.map((step, idx) => {
@@ -163,7 +215,6 @@ export const OrderTrackingPage = () => {
 
               return (
                 <div key={step.key} className="flex gap-3">
-                  {/* Icon column */}
                   <div className="flex flex-col items-center">
                     <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 transition-all
                       ${active ? `${step.bg} ${step.color} ring-2 ring-current ring-offset-1` : ""}
@@ -177,7 +228,6 @@ export const OrderTrackingPage = () => {
                     )}
                   </div>
 
-                  {/* Content */}
                   <div className={`pb-6 min-w-0 ${isLast ? "pb-0" : ""}`}>
                     <p className={`font-medium text-sm leading-tight ${pending ? "text-muted-foreground/60" : ""} ${active ? step.color : ""}`}>
                       {step.label}
@@ -221,12 +271,17 @@ export const OrderTrackingPage = () => {
             <span>Total</span>
             <span>{formatCurrency(order.total)}</span>
           </div>
-          <div className="flex items-center gap-2 pt-1">
+          <div className="flex items-center gap-2 pt-1 flex-wrap">
             <Badge variant="outline" className="text-xs">
               {PAYMENT_LABELS[order.payment_method] ?? order.payment_method}
             </Badge>
             <Badge variant="outline" className="text-xs">
-              {order.delivery_type === "delivery" ? <><Motorbike className="w-3 h-3 mr-1" /> Entrega</> : <><MapPin className="w-3 h-3 mr-1" /> Retirada</>}
+              {isDineIn
+                ? <><UtensilsCrossed className="w-3 h-3 mr-1" /> {order.table_identifier ?? "Mesa"}</>
+                : order.delivery_type === "delivery"
+                  ? <><Motorbike className="w-3 h-3 mr-1" /> Entrega</>
+                  : <><MapPin className="w-3 h-3 mr-1" /> Retirada</>
+              }
             </Badge>
           </div>
         </div>
