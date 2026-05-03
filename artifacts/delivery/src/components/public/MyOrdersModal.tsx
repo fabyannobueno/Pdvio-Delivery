@@ -29,9 +29,10 @@ export const MyOrdersModal = ({ isOpen, onClose, company }: MyOrdersModalProps) 
   const primaryColor = company.delivery_primary_color || "#6d28d9";
 
   const formatPhone = (value: string) => {
-    const numbers = value.replace(/\D/g, "");
-    if (numbers.length <= 11) return numbers.replace(/(\d{2})(\d{5})(\d{4})/, "($1) $2-$3");
-    return numbers.replace(/(\d{2})(\d{2})(\d{5})(\d{4})/, "+$1 ($2) $3-$4");
+    const n = value.replace(/\D/g, "").slice(0, 11);
+    if (n.length <= 2) return n.replace(/(\d{1,2})/, "($1");
+    if (n.length <= 7) return n.replace(/(\d{2})(\d{1,5})/, "($1) $2");
+    return n.replace(/(\d{2})(\d{5})(\d{1,4})/, "($1) $2-$3");
   };
 
   const searchOrders = async () => {
@@ -116,7 +117,7 @@ export const MyOrdersModal = ({ isOpen, onClose, company }: MyOrdersModalProps) 
                 inputMode="numeric"
                 value={phone}
                 onChange={e => setPhone(formatPhone(e.target.value))}
-                maxLength={20}
+                maxLength={15}
                 onKeyDown={e => e.key === "Enter" && searchOrders()}
               />
               <Button onClick={searchOrders} disabled={loading || !phone.trim()} className="w-full sm:w-auto">
