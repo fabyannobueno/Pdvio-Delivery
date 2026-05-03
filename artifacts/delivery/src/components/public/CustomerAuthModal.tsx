@@ -51,6 +51,10 @@ export const CustomerAuthModal = ({ isOpen, onClose, company, onAuthenticated }:
   const [forgotSent, setForgotSent] = useState(false);
 
   const [verifyPending, setVerifyPending] = useState<string | null>(null);
+  const [verifyPendingId, setVerifyPendingId] = useState<string | null>(null);
+  const [verifyPendingName, setVerifyPendingName] = useState("");
+  const [resendLoading, setResendLoading] = useState(false);
+  const [resendDone, setResendDone] = useState(false);
 
   const slug = window.location.pathname.split("/").filter(Boolean)[0] ?? "";
   const storeColor = primaryColor;
@@ -62,13 +66,31 @@ export const CustomerAuthModal = ({ isOpen, onClose, company, onAuthenticated }:
     setLoading(true);
     const result = await loginCustomer({ companyId: company.id, identifier: loginId, password: loginPass });
     setLoading(false);
-    if (result.unverified) {
-      setError("Verifique seu e-mail antes de entrar. Confira sua caixa de entrada.");
+    if (result.unverified && result.unverifiedCustomer) {
+      setVerifyPending(result.unverifiedCustomer.email ?? null);
+      setVerifyPendingId(result.unverifiedCustomer.id);
+      setVerifyPendingName(result.unverifiedCustomer.name);
+      setResendDone(false);
       return;
     }
     if (!result.customer) { setError("Identificador ou senha incorretos."); return; }
     const c = result.customer;
     onAuthenticated({ id: c.id, name: c.name, email: c.email, phone: c.phone, companyId: company.id });
+  };
+
+  const handleResendVerification = async () => {
+    if (!verifyPending || !verifyPendingId) return;
+    setResendLoading(true);
+    const verifyUrl = `${window.location.origin}/${slug}/verificar-email?id=${verifyPendingId}`;
+    await sendEmailVerification({
+      toEmail: verifyPending,
+      toName: verifyPendingName,
+      verifyUrl,
+      storeName: company.name,
+      storeColor,
+    });
+    setResendLoading(false);
+    setResendDone(true);
   };
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -100,6 +122,9 @@ export const CustomerAuthModal = ({ isOpen, onClose, company, onAuthenticated }:
       });
       setLoading(false);
       setVerifyPending(customer.email);
+      setVerifyPendingId(customer.id);
+      setVerifyPendingName(customer.name);
+      setResendDone(false);
       return;
     }
 
@@ -166,16 +191,29 @@ export const CustomerAuthModal = ({ isOpen, onClose, company, onAuthenticated }:
 
         {verifyPending ? (
           <div className="flex flex-col items-center gap-4 py-6 text-center">
-            <MailCheck className="w-12 h-12 text-primary" style={{ color: primaryColor }} />
+            <MailCheck className="w-12 h-12" style={{ color: primaryColor }} />
             <div>
               <p className="font-medium text-base">Confirme seu e-mail</p>
               <p className="text-sm text-muted-foreground mt-1">
                 Enviamos um link de confirmação para<br />
                 <strong>{verifyPending}</strong>
               </p>
-              <p className="text-sm text-muted-foreground mt-2">Clique no link do e-mail para ativar sua conta e entrar.</p>
+              <p className="text-sm text-muted-foreground mt-2">Clique no link para ativar sua conta e entrar.</p>
             </div>
-            <Button variant="outline" onClick={() => { setVerifyPending(null); setError(""); }}>Voltar ao login</Button>
+            <div className="flex flex-col gap-2 w-full">
+              <Button
+                variant="outline"
+                className="w-full"
+                disabled={resendLoading || resendDone}
+                onClick={handleResendVerification}
+              >
+                {resendLoading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                {resendDone ? "E-mail reenviado!" : "Reenviar e-mail"}
+              </Button>
+              <Button variant="ghost" className="w-full text-sm" onClick={() => { setVerifyPending(null); setVerifyPendingId(null); setError(""); }}>
+                Voltar ao login
+              </Button>
+            </div>
           </div>
         ) : forgotView ? (
           <div className="space-y-4">

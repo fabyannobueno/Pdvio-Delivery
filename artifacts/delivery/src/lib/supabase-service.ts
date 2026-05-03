@@ -502,13 +502,13 @@ export async function loginCustomer(params: {
   companyId: string;
   identifier: string;
   password: string;
-}): Promise<{ customer: Customer | null; unverified?: boolean }> {
+}): Promise<{ customer: Customer | null; unverified?: boolean; unverifiedCustomer?: Customer }> {
   const id = params.identifier.toLowerCase().trim();
   const customer = await _findCustomer(params.companyId, id);
   if (!customer || !customer.password_hash) return { customer: null };
   const ok = await bcrypt.compare(params.password, customer.password_hash);
   if (!ok) return { customer: null };
-  if (customer.email && customer.email_verified === false) return { customer: null, unverified: true };
+  if (customer.email && customer.email_verified === false) return { customer: null, unverified: true, unverifiedCustomer: customer };
   return { customer };
 }
 
