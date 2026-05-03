@@ -116,6 +116,28 @@ export const PublicStorePage = () => {
     return () => { supabase.removeChannel(channel); };
   }, [company?.id]);
 
+  // Realtime: re-fetch products on any INSERT/UPDATE/DELETE (products or addons)
+  useEffect(() => {
+    if (!company?.id) return;
+
+    const reload = async () => {
+      const prods = await getProductsByCompanyId(company.id);
+      setProducts(prods);
+    };
+
+    const channel = supabase
+      .channel(`products_realtime_${company.id}`)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "products", filter: `company_id=eq.${company.id}` }, reload)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "products", filter: `company_id=eq.${company.id}` }, reload)
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "products", filter: `company_id=eq.${company.id}` }, reload)
+      .on("postgres_changes", { event: "INSERT", schema: "public", table: "product_addons" }, reload)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "product_addons" }, reload)
+      .on("postgres_changes", { event: "DELETE", schema: "public", table: "product_addons" }, reload)
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [company?.id]);
+
   // Tick every 60s to re-evaluate store open status based on current time
   useEffect(() => {
     const interval = setInterval(() => setCompany(prev => prev ? { ...prev } : prev), 60_000);
