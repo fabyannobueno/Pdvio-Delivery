@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Home, ShoppingCart as CartIcon, Package, Info, User, LogOut, KeyRound, LogIn } from "lucide-react";
+import { Home, ShoppingCart as CartIcon, Package, Info, User, LogOut, KeyRound, LogIn, Pencil } from "lucide-react";
 import { useLocation } from "wouter";
 import type { Company, CustomerSession } from "@/types";
 
@@ -17,9 +17,10 @@ interface DesktopSidebarProps {
   onShowAuth: () => void;
   onLogout: () => void;
   onChangePassword: () => void;
+  onShowProfile: () => void;
 }
 
-export const DesktopSidebar = ({ company, cartItemCount, onShowCart, onShowOrders, onShowStoreInfo, customer, onShowAuth, onLogout, onChangePassword }: DesktopSidebarProps) => {
+export const DesktopSidebar = ({ company, cartItemCount, onShowCart, onShowOrders, onShowStoreInfo, customer, onShowAuth, onLogout, onChangePassword, onShowProfile }: DesktopSidebarProps) => {
   const [, setLocation] = useLocation();
   const [confirmLogout, setConfirmLogout] = useState(false);
 
@@ -67,15 +68,16 @@ export const DesktopSidebar = ({ company, cartItemCount, onShowCart, onShowOrder
               <div className="border-t border-border pt-3 mt-3 space-y-1">
                 {customer ? (
                   <>
-                    <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/50">
+                    <button type="button" onClick={onShowProfile} className="w-full flex items-center gap-2 px-3 py-2 rounded-md bg-muted/50 hover:bg-muted transition-colors group text-left">
                       <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                         <User className="w-3.5 h-3.5 text-primary" />
                       </div>
-                      <div className="min-w-0">
+                      <div className="min-w-0 flex-1">
                         <p className="text-xs font-medium truncate">{customer.name}</p>
                         <p className="text-[11px] text-muted-foreground truncate">{customer.email || customer.phone}</p>
                       </div>
-                    </div>
+                      <Pencil className="w-3 h-3 text-muted-foreground opacity-0 group-hover:opacity-100 shrink-0" />
+                    </button>
                     <Button variant="ghost" className="w-full justify-start h-10 px-3 text-sm" onClick={onChangePassword}>
                       <KeyRound className="w-4 h-4 mr-2" />
                       Alterar senha

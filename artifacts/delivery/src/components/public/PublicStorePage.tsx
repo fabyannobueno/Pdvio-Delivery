@@ -12,6 +12,7 @@ import { MyOrdersModal } from "./MyOrdersModal";
 import { StoreInfoModal } from "./StoreInfoModal";
 import { CustomerAuthModal } from "./CustomerAuthModal";
 import { ChangePasswordModal } from "./ChangePasswordModal";
+import { CustomerProfileModal } from "./CustomerProfileModal";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -46,6 +47,7 @@ export const PublicStorePage = () => {
   const [customer, setCustomer] = useState<CustomerSession | null>(null);
   const [showAuth, setShowAuth] = useState(false);
   const [showChangePassword, setShowChangePassword] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
   const [pendingCheckout, setPendingCheckout] = useState(false);
 
   // Parse mesa params from URL
@@ -357,6 +359,7 @@ export const PublicStorePage = () => {
         customer={customer} onShowAuth={() => setShowAuth(true)}
         onLogout={() => { setCustomer(null); localStorage.removeItem(`customer_session_${company.id}`); }}
         onChangePassword={() => setShowChangePassword(true)}
+        onShowProfile={() => setShowProfile(true)}
       />
       <DesktopSidebar
         company={company} cartItemCount={cartItemCount}
@@ -364,6 +367,7 @@ export const PublicStorePage = () => {
         customer={customer} onShowAuth={() => setShowAuth(true)}
         onLogout={() => { setCustomer(null); localStorage.removeItem(`customer_session_${company.id}`); }}
         onChangePassword={() => setShowChangePassword(true)}
+        onShowProfile={() => setShowProfile(true)}
       />
 
       <div className="min-h-screen bg-gray-50 pt-16 md:pt-0 md:ml-64">
@@ -664,6 +668,16 @@ export const PublicStorePage = () => {
         <ChangePasswordModal
           isOpen={showChangePassword} onClose={() => setShowChangePassword(false)}
           company={company} session={customer}
+        />
+      )}
+      {customer && (
+        <CustomerProfileModal
+          isOpen={showProfile} onClose={() => setShowProfile(false)}
+          company={company} session={customer}
+          onUpdated={updated => {
+            setCustomer(updated);
+            localStorage.setItem(`customer_session_${company.id}`, JSON.stringify(updated));
+          }}
         />
       )}
     </>

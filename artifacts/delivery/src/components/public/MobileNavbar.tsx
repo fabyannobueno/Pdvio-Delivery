@@ -3,7 +3,7 @@ import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Menu, Home, ShoppingCart as CartIcon, Package, Info, User, LogOut, KeyRound, LogIn } from "lucide-react";
+import { Menu, Home, ShoppingCart as CartIcon, Package, Info, User, LogOut, KeyRound, LogIn, Pencil } from "lucide-react";
 import type { Company, CustomerSession } from "@/types";
 
 interface MobileNavbarProps {
@@ -16,9 +16,10 @@ interface MobileNavbarProps {
   onShowAuth: () => void;
   onLogout: () => void;
   onChangePassword: () => void;
+  onShowProfile: () => void;
 }
 
-export const MobileNavbar = ({ company, cartItemCount, onShowCart, onShowOrders, onShowStoreInfo, customer, onShowAuth, onLogout, onChangePassword }: MobileNavbarProps) => {
+export const MobileNavbar = ({ company, cartItemCount, onShowCart, onShowOrders, onShowStoreInfo, customer, onShowAuth, onLogout, onChangePassword, onShowProfile }: MobileNavbarProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [confirmLogout, setConfirmLogout] = useState(false);
   const [, setLocation] = useLocation();
@@ -76,15 +77,16 @@ export const MobileNavbar = ({ company, cartItemCount, onShowCart, onShowOrders,
                 <div className="border-t border-border pt-4 space-y-2">
                   {customer ? (
                     <>
-                      <div className="flex items-center gap-3 px-4 py-2">
-                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                      <button type="button" onClick={() => { onShowProfile(); setIsOpen(false); }} className="w-full flex items-center gap-3 px-4 py-2 rounded-md hover:bg-muted transition-colors group text-left">
+                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                           <User className="w-4 h-4 text-primary" />
                         </div>
-                        <div className="min-w-0">
+                        <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium truncate">{customer.name}</p>
                           <p className="text-xs text-muted-foreground truncate">{customer.email || customer.phone}</p>
                         </div>
-                      </div>
+                        <Pencil className="w-3.5 h-3.5 text-muted-foreground opacity-0 group-hover:opacity-100 shrink-0" />
+                      </button>
                       <Button variant="ghost" className="w-full justify-start h-11 px-4" onClick={() => { onChangePassword(); setIsOpen(false); }}>
                         <KeyRound className="w-4 h-4 mr-3" />
                         Alterar senha
