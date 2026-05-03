@@ -31,6 +31,22 @@ function maskCpf(value: string): string {
   return `${digits.slice(0, 3)}.${digits.slice(3, 6)}.${digits.slice(6, 9)}-${digits.slice(9)}`;
 }
 
+function isValidCpf(value: string): boolean {
+  const d = value.replace(/\D/g, "");
+  if (d.length !== 11) return false;
+  if (/^(\d)\1{10}$/.test(d)) return false;
+  let sum = 0;
+  for (let i = 0; i < 9; i++) sum += parseInt(d[i]) * (10 - i);
+  let r = (sum * 10) % 11;
+  if (r === 10 || r === 11) r = 0;
+  if (r !== parseInt(d[9])) return false;
+  sum = 0;
+  for (let i = 0; i < 10; i++) sum += parseInt(d[i]) * (11 - i);
+  r = (sum * 10) % 11;
+  if (r === 10 || r === 11) r = 0;
+  return r === parseInt(d[10]);
+}
+
 function formatCpfDisplay(raw: string): string {
   const d = raw.replace(/\D/g, "");
   if (d.length !== 11) return raw;
@@ -132,7 +148,23 @@ export const CustomerProfileModal = ({ isOpen, onClose, company, session, onUpda
     }
 
     const newDocumentDigits = document.replace(/\D/g, "");
+    if (!hasDocument && document.trim() && !isValidCpf(document)) {
+      setLoading(false);
+      setError("CPF inválido. Verifique e tente novamente.");
+      return;
+    }
     if (!hasDocument && newDocumentDigits.length === 11) {
+      const { data: existing } = await supabase
+        .from("customers")
+        .select("id")
+        .eq("company_id", session.companyId)
+        .eq("document", newDocumentDigits)
+        .maybeSingle();
+      if (existing) {
+        setLoading(false);
+        setError("Este CPF já está vinculado a outra conta.");
+        return;
+      }
       updatePayload.document = newDocumentDigits;
     }
 
