@@ -187,6 +187,25 @@ export const PublicStorePage = () => {
   };
 
   const addToCart = (product: Product, quantity: number, addons: ProductAddon[], weight?: number) => {
+    const stockQty = product.stock_quantity;
+    if (stockQty !== undefined && stockQty !== null) {
+      const isWeighted = product.stock_unit === "kg" || product.stock_unit === "g";
+      if (isWeighted) {
+        const needed = (weight ?? 0) * quantity;
+        if (needed > stockQty) {
+          toast({ title: "Estoque insuficiente", description: `Disponível: ${stockQty.toFixed(3).replace(".", ",")} ${product.stock_unit}`, variant: "destructive" });
+          return;
+        }
+      } else {
+        const inCart = cart.filter(i => i.productId === product.id && JSON.stringify(i.selectedAddons?.map(a => a.id)) === JSON.stringify(addons.map(a => a.id))).reduce((s, i) => s + i.quantity, 0);
+        if (inCart + quantity > stockQty) {
+          const available = Math.max(0, stockQty - inCart);
+          toast({ title: "Estoque insuficiente", description: available > 0 ? `Você já tem ${inCart} no carrinho. Disponível: ${available}` : "Produto sem estoque disponível.", variant: "destructive" });
+          return;
+        }
+      }
+    }
+
     const price = getEffectivePrice(product);
     const addonsTotal = addons.reduce((t, a) => t + a.price, 0);
     const totalPrice = weight
