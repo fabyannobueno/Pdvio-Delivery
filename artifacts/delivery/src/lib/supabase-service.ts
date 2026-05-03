@@ -425,13 +425,14 @@ export function applyThemeColor(primaryColor: string): void {
   document.documentElement.style.setProperty("--ring", hsl);
 }
 
-export async function getOrderReview(orderId: string): Promise<boolean> {
+export async function getOrderReview(orderId: string): Promise<{ rating: number; comment?: string } | null> {
   const { data } = await supabase
     .from("order_reviews")
-    .select("id")
+    .select("rating, comment")
     .eq("order_id", orderId)
     .maybeSingle();
-  return !!data;
+  if (!data) return null;
+  return { rating: data.rating, comment: data.comment ?? undefined };
 }
 
 export async function submitOrderReview(params: {

@@ -64,8 +64,7 @@ export const OrderTrackingPage = () => {
   const [reviewHover, setReviewHover] = useState(0);
   const [reviewComment, setReviewComment] = useState("");
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
-  const [reviewSubmitted, setReviewSubmitted] = useState(false);
-  const [alreadyReviewed, setAlreadyReviewed] = useState(false);
+  const [savedReview, setSavedReview] = useState<{ rating: number; comment?: string } | null>(null);
 
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: "instant" });
@@ -151,8 +150,8 @@ export const OrderTrackingPage = () => {
 
   useEffect(() => {
     if (!order || !FINAL_STATUSES.includes(order.status)) return;
-    getOrderReview(order.id).then((exists) => {
-      if (exists) setAlreadyReviewed(true);
+    getOrderReview(order.id).then((review) => {
+      if (review) setSavedReview(review);
     });
   }, [order?.status]);
 
@@ -170,7 +169,7 @@ export const OrderTrackingPage = () => {
       comment: reviewComment,
     });
     setReviewSubmitting(false);
-    if (ok) setReviewSubmitted(true);
+    if (ok) setSavedReview({ rating: reviewRating, comment: reviewComment || undefined });
   };
 
   if (loading) {
@@ -364,13 +363,26 @@ export const OrderTrackingPage = () => {
         )}
 
         {/* Avaliação do pedido */}
-        {FINAL_STATUSES.includes(order.status) && !alreadyReviewed && (
+        {FINAL_STATUSES.includes(order.status) && (
           <div className="rounded-xl border bg-card p-5 space-y-4">
-            {reviewSubmitted ? (
-              <div className="flex flex-col items-center gap-2 py-2 text-center">
-                <CheckCircle2 className="w-10 h-10 text-primary" />
-                <p className="font-semibold text-base">Obrigado pela avaliação!</p>
-                <p className="text-sm text-muted-foreground">Seu feedback nos ajuda a melhorar.</p>
+            {savedReview ? (
+              <div className="space-y-3">
+                <div className="flex items-center gap-2">
+                  <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                  <p className="font-semibold text-sm">Sua avaliação</p>
+                </div>
+                <div className="flex gap-1">
+                  {[1, 2, 3, 4, 5].map((star) => (
+                    <Star
+                      key={star}
+                      className={`w-7 h-7 ${star <= savedReview.rating ? "fill-yellow-400 text-yellow-400" : "fill-muted text-muted-foreground"}`}
+                    />
+                  ))}
+                </div>
+                {savedReview.comment && (
+                  <p className="text-sm text-muted-foreground italic">"{savedReview.comment}"</p>
+                )}
+                <p className="text-xs text-muted-foreground">Obrigado pelo seu feedback!</p>
               </div>
             ) : (
               <>
