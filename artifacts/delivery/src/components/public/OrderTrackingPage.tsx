@@ -367,7 +367,7 @@ export const OrderTrackingPage = () => {
 
       {/* Avaliação do pedido */}
       {order && FINAL_STATUSES.includes(order.status) && !alreadyReviewed && (
-        <div className="rounded-xl border bg-card p-5 space-y-4 max-w-md mx-auto w-full">
+        <div className="rounded-xl border bg-card p-5 space-y-4 max-w-lg mx-auto w-full">
           {reviewSubmitted ? (
             <div className="flex flex-col items-center gap-2 py-2 text-center">
               <CheckCircle2 className="w-10 h-10 text-primary" />
