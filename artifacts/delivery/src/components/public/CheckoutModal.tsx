@@ -261,8 +261,13 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
           total,
           deliveryFee,
           paymentMethod: selectedPayment,
-          deliveryType, customerName: customerData.name, customerPhone: customerData.phone,
-          address, notes: orderNotes, changeNote: changeNote ?? undefined, trackingUrl,
+          deliveryType,
+          customerName: customerData.name,
+          customerPhone: customerData.phone,
+          address,
+          notes: orderNotes,
+          changeNote: changeNote ?? undefined,
+          trackingUrl,
         });
         if (company.wapi_instance_id) await sendWhatsAppOrder(company, message, customerData.phone);
       }
