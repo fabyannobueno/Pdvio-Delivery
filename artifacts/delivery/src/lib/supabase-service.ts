@@ -335,6 +335,7 @@ export function generateOrderWhatsAppMessage(params: {
   tableIdentifier?: string;
   notes?: string;
   changeNote?: string;
+  trackingUrl?: string;
 }): string {
   const paymentLabels: Record<string, string> = {
     pix: "PIX",
@@ -376,6 +377,10 @@ export function generateOrderWhatsAppMessage(params: {
 
   if (params.notes) {
     msg += `\n\n📝 *Obs:* ${params.notes}`;
+  }
+
+  if (params.trackingUrl) {
+    msg += `\n\n🔍 *Acompanhe seu pedido:*\n${params.trackingUrl}`;
   }
 
   return msg;

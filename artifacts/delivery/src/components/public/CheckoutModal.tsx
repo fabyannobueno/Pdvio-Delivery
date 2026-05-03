@@ -171,6 +171,9 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
       if (!sale) throw new Error("Erro ao criar pedido");
 
       if (deliveryType !== "dine_in") {
+        const orderId = sale.numeric_id ?? sale.id;
+        const trackingUrl = `${window.location.origin}/${company.delivery_slug}/pedido/${orderId}`;
+
         const message = generateOrderWhatsAppMessage({
           company,
           items: cart,
@@ -183,6 +186,7 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
           address,
           notes: orderNotes,
           changeNote: changeNote ?? undefined,
+          trackingUrl,
         });
 
         if (company.delivery_whatsapp) {
