@@ -41,6 +41,23 @@ const DINE_IN_STEPS: StatusStep[] = [
   { key: "delivered", label: "Servido",                description: "Bom apetite! 😋",                                icon: CheckCircle2,color: "text-green-500", bg: "bg-green-100" },
 ];
 
+function formatAddress(raw: string): string {
+  try {
+    const obj = JSON.parse(raw);
+    const parts = [
+      obj.logradouro,
+      obj.numero ? `nº ${obj.numero}` : null,
+      obj.complemento || null,
+      obj.bairro,
+      obj.cidade && obj.estado ? `${obj.cidade} — ${obj.estado}` : obj.cidade || obj.estado,
+      obj.cep ? `CEP ${obj.cep}` : null,
+    ].filter(Boolean);
+    return parts.join(", ");
+  } catch {
+    return raw;
+  }
+}
+
 const PAYMENT_LABELS: Record<string, string> = {
   pix: "PIX",
   cash: "Dinheiro",
@@ -374,7 +391,7 @@ export const OrderTrackingPage = () => {
             <p className="font-semibold text-sm flex items-center gap-2">
               <MapPin className="w-4 h-4 text-primary" /> Retire seu pedido em
             </p>
-            <p className="text-sm text-muted-foreground">{company.address}</p>
+            <p className="text-sm text-muted-foreground">{formatAddress(company.address)}</p>
             {company.phone && (
               <p className="text-sm text-muted-foreground">{company.phone}</p>
             )}
