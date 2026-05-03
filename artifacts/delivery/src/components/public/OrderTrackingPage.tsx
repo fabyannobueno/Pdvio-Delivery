@@ -195,7 +195,8 @@ export const OrderTrackingPage = () => {
   const isCancelled = order.status === "cancelled";
   const isDineIn = order.delivery_type === "dine_in";
   const steps = isDineIn ? DINE_IN_STEPS : order.delivery_type === "delivery" ? DELIVERY_STEPS : PICKUP_STEPS;
-  const currentIdx = steps.findIndex((s) => s.key === order.status);
+  const rawIdx = steps.findIndex((s) => s.key === order.status);
+  const currentIdx = (isDineIn && comandaConfirmed && rawIdx < 1) ? 1 : rawIdx;
 
   const formatTs = (ts: string) =>
     new Date(ts).toLocaleString("pt-BR", { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
