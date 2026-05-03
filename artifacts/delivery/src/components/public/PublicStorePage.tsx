@@ -515,15 +515,15 @@ export const PublicStorePage = () => {
                           >
                             {/* Mobile: horizontal | Desktop: vertical */}
                             <div className="flex flex-row md:flex-col">
-                              <div className="relative shrink-0">
+                              <div className="relative shrink-0 self-stretch md:self-auto">
                                 {product.image_url ? (
                                   <img
                                     src={product.image_url}
                                     alt={product.name}
-                                    className="w-24 h-24 md:w-56 md:h-40 object-cover md:rounded-t-lg rounded-l-lg md:rounded-l-none"
+                                    className="w-24 h-full md:w-56 md:h-40 object-cover md:rounded-t-lg rounded-l-lg md:rounded-l-none"
                                   />
                                 ) : (
-                                  <div className="w-24 h-24 md:w-56 md:h-40 bg-muted md:rounded-t-lg rounded-l-lg md:rounded-l-none flex items-center justify-center">
+                                  <div className="w-24 h-full min-h-[96px] md:w-56 md:h-40 bg-muted md:rounded-t-lg rounded-l-lg md:rounded-l-none flex items-center justify-center">
                                     <span className="text-2xl md:text-3xl font-bold text-muted-foreground">{product.name.charAt(0)}</span>
                                   </div>
                                 )}
