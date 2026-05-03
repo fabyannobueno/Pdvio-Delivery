@@ -510,38 +510,45 @@ export const PublicStorePage = () => {
                         return (
                           <Card
                             key={product.id}
-                            className="cursor-pointer hover:shadow-md transition-shadow flex-shrink-0 md:w-56 w-full"
+                            className="cursor-pointer hover:shadow-md transition-shadow flex-shrink-0 md:w-56 w-full overflow-hidden"
                             onClick={() => handleProductClick(product)}
                           >
-                            <div className="relative">
-                              {product.image_url ? (
-                                <img src={product.image_url} alt={product.name} className="w-full h-36 md:w-56 md:h-40 object-cover rounded-t-lg" />
-                              ) : (
-                                <div className="w-full h-36 md:w-56 md:h-40 bg-muted rounded-t-lg flex items-center justify-center">
-                                  <span className="text-3xl font-bold text-muted-foreground">{product.name.charAt(0)}</span>
-                                </div>
-                              )}
-                              {inPromo && (
-                                <Badge className="absolute top-2 right-2 bg-red-500 text-white text-xs">PROMO</Badge>
-                              )}
-                            </div>
-                            <CardContent className="p-3">
-                              <h3 className="font-semibold text-sm line-clamp-2 mb-1">{product.name}</h3>
-                              {product.description && (
-                                <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{product.description}</p>
-                              )}
-                              <div className="flex items-center gap-1">
-                                {inPromo && (
-                                  <span className="text-xs text-muted-foreground line-through">
-                                    R$ {product.sale_price.toFixed(2).replace(".", ",")}
-                                  </span>
+                            {/* Mobile: horizontal | Desktop: vertical */}
+                            <div className="flex flex-row md:flex-col">
+                              <div className="relative shrink-0">
+                                {product.image_url ? (
+                                  <img
+                                    src={product.image_url}
+                                    alt={product.name}
+                                    className="w-24 h-24 md:w-56 md:h-40 object-cover md:rounded-t-lg rounded-l-lg md:rounded-l-none"
+                                  />
+                                ) : (
+                                  <div className="w-24 h-24 md:w-56 md:h-40 bg-muted md:rounded-t-lg rounded-l-lg md:rounded-l-none flex items-center justify-center">
+                                    <span className="text-2xl md:text-3xl font-bold text-muted-foreground">{product.name.charAt(0)}</span>
+                                  </div>
                                 )}
-                                <span className={`font-bold text-sm ${inPromo ? "text-red-600" : ""}`}>
-                                  R$ {price.toFixed(2).replace(".", ",")}
-                                </span>
-                                <span className="text-xs text-muted-foreground">/{product.stock_unit}</span>
+                                {inPromo && (
+                                  <Badge className="absolute top-2 right-2 bg-red-500 text-white text-xs">PROMO</Badge>
+                                )}
                               </div>
-                            </CardContent>
+                              <CardContent className="p-3 flex flex-col justify-center min-w-0">
+                                <h3 className="font-semibold text-sm line-clamp-2 mb-1">{product.name}</h3>
+                                {product.description && (
+                                  <p className="text-xs text-muted-foreground line-clamp-2 mb-2">{product.description}</p>
+                                )}
+                                <div className="flex items-center gap-1 flex-wrap">
+                                  {inPromo && (
+                                    <span className="text-xs text-muted-foreground line-through">
+                                      R$ {product.sale_price.toFixed(2).replace(".", ",")}
+                                    </span>
+                                  )}
+                                  <span className={`font-bold text-sm ${inPromo ? "text-red-600" : ""}`}>
+                                    R$ {price.toFixed(2).replace(".", ",")}
+                                  </span>
+                                  <span className="text-xs text-muted-foreground">/{product.stock_unit}</span>
+                                </div>
+                              </CardContent>
+                            </div>
                           </Card>
                         );
                       })}
