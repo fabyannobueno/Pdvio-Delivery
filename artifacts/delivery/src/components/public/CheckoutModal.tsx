@@ -164,7 +164,7 @@ export const CheckoutModal = ({ isOpen, onClose, cart, setCart, company, mesaPar
       setCart([]);
       localStorage.removeItem(`cart_${company.id}`);
       onClose();
-      navigate(`/${company.delivery_slug}/pedido/${sale.id}`);
+      navigate(`/${company.delivery_slug}/pedido/${sale.numeric_id ?? sale.id}`);
     } catch (err) {
       console.error(err);
       toast({ title: "Erro ao finalizar pedido", description: "Tente novamente.", variant: "destructive" });

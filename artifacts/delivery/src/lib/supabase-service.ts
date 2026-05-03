@@ -279,11 +279,12 @@ export async function callWaiter(params: {
 export async function getDeliveryOrderById(
   orderId: string
 ): Promise<import("../types").DeliveryOrder | null> {
-  const { data, error } = await supabase
-    .from("delivery_orders")
-    .select("*")
-    .eq("id", orderId)
-    .single();
+  const isNumeric = /^\d+$/.test(orderId);
+  const query = supabase.from("delivery_orders").select("*");
+  const { data, error } = await (isNumeric
+    ? query.eq("numeric_id", Number(orderId))
+    : query.eq("id", orderId)
+  ).single();
   if (error || !data) return null;
   return data as import("../types").DeliveryOrder;
 }

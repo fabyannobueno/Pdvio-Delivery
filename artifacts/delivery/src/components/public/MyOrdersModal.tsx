@@ -145,7 +145,7 @@ export const MyOrdersModal = ({ isOpen, onClose, company }: MyOrdersModalProps) 
                         className="cursor-pointer hover:shadow-md transition-shadow"
                         onClick={() => {
                           handleClose();
-                          navigate(`/${company.delivery_slug}/pedido/${order.id}`);
+                          navigate(`/${company.delivery_slug}/pedido/${order.numeric_id ?? order.id}`);
                         }}
                       >
                         <CardContent className="p-4">
